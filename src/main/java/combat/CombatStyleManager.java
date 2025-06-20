@@ -23,9 +23,9 @@ public class CombatStyleManager {
     
     // Combat style enumeration
     public enum CombatStyle {
-        ATTACK(0, "Attack"),
-        STRENGTH(1, "Strength"),
-        DEFENCE(2, "Defence"),
+        ACCURATE(0, "Accurate"),
+        AGGRESSIVE(1, "Aggressive"),
+        DEFENSIVE(2, "Defensive"),
         CONTROLLED(3, "Controlled"),
         RANGED_ACCURATE(0, "Accurate"),
         RANGED_RAPID(1, "Rapid"),
@@ -71,7 +71,7 @@ public class CombatStyleManager {
     private static final int COMBAT_STYLE_PARENT = 1;
     
     public CombatStyleManager() {
-        this.currentStyle = CombatStyle.ATTACK;
+        this.currentStyle = CombatStyle.ACCURATE;
         this.currentWeaponType = WeaponType.UNKNOWN;
         this.autoSwitchStyle = false;
         this.lastStyleCheck = 0;
@@ -104,6 +104,20 @@ public class CombatStyleManager {
      * @param style desired combat style
      * @return true if successfully set, false otherwise
      */
+    /**
+     * Sets the desired combat style by its string name.
+     * 
+     * @param styleName The name of the style to set (e.g., "ACCURATE", "AGGRESSIVE").
+     */
+    public void setCurrentStyle(String styleName) {
+        try {
+            CombatStyle style = CombatStyle.valueOf(styleName.toUpperCase());
+            setCombatStyle(style);
+        } catch (IllegalArgumentException e) {
+            Logger.error("[CombatStyleManager] Invalid combat style name: " + styleName);
+        }
+    }
+
     public boolean setCombatStyle(CombatStyle style) {
         if (style == null) {
             Logger.error("Cannot set null combat style");
@@ -249,9 +263,10 @@ public class CombatStyleManager {
             
             WidgetChild styleWidget = Widgets.getWidgetChild(COMBAT_TAB_WIDGET, styleIds[style.getIndex()]);
             if (styleWidget != null && styleWidget.isVisible()) {
-                styleWidget.interact();
-                Sleep.sleep(100, 300);
-                return true;
+                if (styleWidget.interact()) {
+                    Sleep.sleep(100, 300);
+                    return true;
+                }
             }
             
             return false;
@@ -272,9 +287,9 @@ public class CombatStyleManager {
     private boolean isStyleCompatible(CombatStyle style, WeaponType weaponType) {
         switch (weaponType) {
             case MELEE:
-                return style == CombatStyle.ATTACK ||
-                       style == CombatStyle.STRENGTH ||
-                       style == CombatStyle.DEFENCE ||
+                return style == CombatStyle.ACCURATE ||
+                       style == CombatStyle.AGGRESSIVE ||
+                       style == CombatStyle.DEFENSIVE ||
                        style == CombatStyle.CONTROLLED;
                        
             case RANGED:
@@ -305,13 +320,13 @@ public class CombatStyleManager {
         
         switch (skillLower) {
             case "attack":
-                return currentWeaponType == WeaponType.MELEE ? CombatStyle.ATTACK : null;
+                return currentWeaponType == WeaponType.MELEE ? CombatStyle.ACCURATE : null;
             case "strength":
-                return currentWeaponType == WeaponType.MELEE ? CombatStyle.STRENGTH : null;
+                return currentWeaponType == WeaponType.MELEE ? CombatStyle.AGGRESSIVE : null;
             case "defence":
                 switch (currentWeaponType) {
                     case MELEE:
-                        return CombatStyle.DEFENCE;
+                        return CombatStyle.DEFENSIVE;
                     case RANGED:
                         return CombatStyle.RANGED_LONGRANGE;
                     case MAGIC:
@@ -375,9 +390,9 @@ public class CombatStyleManager {
         switch (currentWeaponType) {
             case MELEE:
                 return new CombatStyle[]{
-                    CombatStyle.ATTACK,
-                    CombatStyle.STRENGTH,
-                    CombatStyle.DEFENCE,
+                    CombatStyle.ACCURATE,
+                    CombatStyle.AGGRESSIVE,
+                    CombatStyle.DEFENSIVE,
                     CombatStyle.CONTROLLED
                 };
             case RANGED:
@@ -409,10 +424,20 @@ public class CombatStyleManager {
      * Resets combat style manager to default state
      */
     public void reset() {
-        currentStyle = CombatStyle.ATTACK;
+        currentStyle = CombatStyle.ACCURATE;
         currentWeaponType = WeaponType.UNKNOWN;
         autoSwitchStyle = false;
         lastStyleCheck = 0;
         Logger.log("CombatStyleManager reset to default state");
+    }
+    
+    /**
+     * Get combat style statistics
+     */
+    public String getStatistics() {
+        return String.format("Style: %s, Weapon: %s, Auto-switch: %s",
+            currentStyle != null ? currentStyle.getDisplayName() : "None",
+            currentWeaponType != null ? currentWeaponType.name() : "Unknown",
+            autoSwitchStyle ? "Enabled" : "Disabled");
     }
 }

@@ -1,408 +1,409 @@
 package scripts;
 
-import org.dreambot.api.script.AbstractScript;
-import org.dreambot.api.script.Category;
-import org.dreambot.api.script.ScriptManifest;
-import org.dreambot.api.utilities.Logger;
+import org.dreambot.api.methods.Calculations;
 import org.dreambot.api.methods.skills.Skill;
 import org.dreambot.api.methods.skills.Skills;
-import org.dreambot.api.methods.interactive.Players;
-import org.dreambot.api.methods.interactive.NPCs;
-import org.dreambot.api.wrappers.interactive.NPC;
+import org.dreambot.api.script.AbstractScript;
+import org.dreambot.api.script.ScriptManifest;
+import org.dreambot.api.script.Category;
+import org.dreambot.api.utilities.Logger;
+import org.dreambot.api.utilities.Sleep;
 import org.dreambot.api.wrappers.interactive.Player;
-import org.dreambot.api.methods.combat.Combat;
+import org.dreambot.api.methods.interactive.Players;
 
-// Import our custom components
+import javax.swing.SwingUtilities;
+import javax.swing.JFrame;
+import javax.swing.Timer;
+import java.awt.Window;
+import java.util.Map;
+import java.util.HashMap;
+
+// Import Phase 1 components
 import core.CombatEngine;
 import combat.TargetSelector;
 import combat.CombatStyleManager;
 import tasks.TaskManager;
 import antiban.AntiBanManager;
 
+// Import Phase 2 components
+import combat.EquipmentManager;
+import combat.WeaponManager;
+import economy.BankManager;
+import gui.CombatGUI;
+
+/**
+ * AI Combat Script for Old School RuneScape
+ * Advanced combat automation with anti-detection and GUI
+ * 
+ * @author TraeAI
+ * @version 2.0
+ */
 @ScriptManifest(
-        name = "AI Combat Script",
-        description = "Advanced AI-powered combat automation for OSRS with task management, anti-ban, and intelligent targeting",
-        author = "TraeAI",
-        version = 2.0,
-        category = Category.COMBAT
+    author = "TraeAI",
+    description = "Advanced AI Combat Script with GUI and Banking",
+    category = Category.COMBAT,
+    version = 2.0,
+    name = "AI Combat OSRS v2"
 )
 public class AICombatScript extends AbstractScript {
     
-    // Core components
+    // Core Components
     private CombatEngine combatEngine;
-    private TargetSelector targetSelector;
-    private CombatStyleManager styleManager;
     private TaskManager taskManager;
     private AntiBanManager antiBanManager;
+    private CombatStyleManager combatStyleManager;
+    private TargetSelector targetSelector;
     
-    // Script state
-    private boolean isInitialized;
-    private long scriptStartTime;
-    private long lastStatusUpdate;
-    private int loopCount;
+    // Phase 2 Components
+    private EquipmentManager equipmentManager;
+    private WeaponManager weaponManager;
+    private BankManager bankManager;
+    private CombatGUI gui;
     
-    // Configuration (these would normally come from GUI)
-    private String targetNpcName = "Cow"; // Default target for testing
-    private Skill trainingSkill = Skill.ATTACK;
-    private int targetLevel = 10;
-    private String combatStyle = "attack";
+    // Script State
+    private boolean isRunning = false;
+    private boolean isPaused = false;
+    private long startTime;
+    private Map<String, Object> configuration = new HashMap<>();
     
     @Override
     public void onStart() {
-        Logger.log("=== AI Combat Script v2.0 Starting ===");
+        Logger.log("[AICombatScript] Starting AI Combat Script v2.0");
         
         try {
+            // Initialize GUI first
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    gui = new CombatGUI(this); // Pass script reference to GUI
+                    
+                    // Force window to be independent and visible
+                    gui.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+                    gui.setType(Window.Type.NORMAL);
+                    gui.setAutoRequestFocus(true);
+                    gui.setFocusableWindowState(true);
+                    gui.setAlwaysOnTop(true);
+                    
+                    // Make visible and bring to front
+                    gui.setVisible(true);
+                    gui.toFront();
+                    gui.requestFocus();
+                    gui.repaint();
+                    
+                    // Reset always on top after a delay
+                    Timer resetTimer = new Timer(2000, e -> {
+                        gui.setAlwaysOnTop(false);
+                        ((Timer) e.getSource()).stop();
+                    });
+                    resetTimer.start();
+                    
+                    gui.logMessage("AI Combat Script v2.0 initialized");
+                    Logger.log("[AICombatScript] GUI window created and displayed with script reference");
+                    
+                } catch (Exception e) {
+                    Logger.error("[AICombatScript] Failed to create GUI: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            });
+            
+            // Wait for GUI to be ready
+            Sleep.sleep(1000);
+            
+            // Initialize core components
             initializeComponents();
-            setupInitialTasks();
             
-            scriptStartTime = System.currentTimeMillis();
-            lastStatusUpdate = 0;
-            loopCount = 0;
-            isInitialized = true;
+            // Set script state - start paused, waiting for GUI to start it
+            isRunning = true;
+            isPaused = true; // Start paused until GUI starts it
+            startTime = System.currentTimeMillis();
             
-            Logger.log("AI Combat Script successfully initialized!");
-            Logger.log("Target: " + targetNpcName);
-            Logger.log("Training: " + trainingSkill.getName() + " to level " + targetLevel);
-            Logger.log("Combat Style: " + combatStyle);
+            Logger.log("[AICombatScript] Script started successfully with GUI");
             
         } catch (Exception e) {
-            Logger.error("Failed to initialize script: " + e.getMessage());
-            e.printStackTrace();
+            Logger.error("[AICombatScript] Failed to start script: " + e.getMessage());
             stop();
         }
     }
     
     /**
-     * Initializes all script components
+     * Initialize all script components
      */
     private void initializeComponents() {
-        Logger.log("Initializing script components...");
+        Logger.log("[AICombatScript] Initializing components...");
         
-        // Initialize core components
-        combatEngine = new CombatEngine();
+        // Initialize Phase 1 managers
+        combatStyleManager = new CombatStyleManager();
         targetSelector = new TargetSelector();
-        styleManager = new CombatStyleManager();
-        taskManager = new TaskManager();
         antiBanManager = new AntiBanManager();
+        taskManager = new TaskManager();
         
-        // Configure target selector
-        targetSelector.addTargetName(targetNpcName);
-        targetSelector.setPriority(TargetSelector.TargetPriority.CLOSEST);
-        targetSelector.setMaxDistance(8);
-        targetSelector.setAvoidCombatNpcs(true);
+        // Initialize Phase 2 managers
+        equipmentManager = new EquipmentManager();
+        weaponManager = new WeaponManager();
+        bankManager = new BankManager();
         
-        // Configure anti-ban
-        antiBanManager.setBehaviorProfile(AntiBanManager.BehaviorProfile.NORMAL);
-        antiBanManager.setEnabled(true);
+        // Initialize combat engine
+        combatEngine = new CombatEngine();
         
-        // Set up dependencies
-        combatEngine.setTargetSelector(targetSelector);
-        combatEngine.setStyleManager(styleManager);
-        combatEngine.setAntiBanManager(antiBanManager);
-        taskManager.setStyleManager(styleManager);
-        
-        Logger.log("All components initialized successfully");
+        Logger.log("[AICombatScript] All components initialized successfully");
+        logToGUI("All script components initialized");
     }
     
     /**
-     * Sets up initial training tasks
+     * Helper method to log messages to GUI
      */
-    private void setupInitialTasks() {
-        Logger.log("Setting up initial tasks...");
-        
-        // Add a simple training task
-        taskManager.addSimpleTask(
-            "Train " + trainingSkill.getName() + " to level " + targetLevel,
-            targetNpcName,
-            trainingSkill,
-            targetLevel,
-            combatStyle
-        );
-        
-        // Start task manager
-        taskManager.start();
-        
-        Logger.log("Tasks configured and started");
+    private void logToGUI(String message) {
+        if (gui != null) {
+            SwingUtilities.invokeLater(() -> gui.logMessage(message));
+        }
+    }
+    
+    /**
+     * Update configuration from GUI
+     */
+    private void updateConfigurationFromGUI() {
+        if (gui != null) {
+            configuration = gui.getConfiguration();
+            
+            // Apply configuration to managers
+            if (configuration.containsKey("targetNpc")) {
+                targetSelector.addTargetName((String) configuration.get("targetNpc"));
+            }
+            
+            if (configuration.containsKey("combatStyle")) {
+                combatStyleManager.setCurrentStyle((String) configuration.get("combatStyle"));
+            }
+            
+            if (configuration.containsKey("bankingEnabled")) {
+                bankManager.setEnabled((Boolean) configuration.get("bankingEnabled"));
+            }
+        }
     }
 
     @Override
     public int onLoop() {
-        if (!isInitialized) {
-            return 5000; // Wait 5 seconds if not initialized
+        if (!isRunning || isPaused) {
+            return 1000;
         }
         
         try {
-            loopCount++;
+            // Update configuration from GUI
+            updateConfigurationFromGUI();
             
-            // Update all components
-            updateComponents();
-            
-            // Main combat logic
-            if (taskManager.isRunning() && taskManager.getCurrentTask() != null) {
-                executeCombatLoop();
-            } else {
-                Logger.log("No active tasks - script idle");
-                return 5000; // Wait 5 seconds when no tasks
+            // Check if banking is needed
+            if (bankManager.needsToBank()) {
+                logToGUI("Banking required - heading to bank");
+                if (bankManager.handleBanking()) {
+                    logToGUI("Banking completed successfully");
+                } else {
+                    logToGUI("Banking failed - retrying");
+                    return 2000;
+                }
             }
             
-            // Periodic status updates
-            updateStatus();
+            // Select a target before engaging
+            org.dreambot.api.wrappers.interactive.NPC target = targetSelector.selectNextTarget();
+            if (target == null) {
+                logToGUI("No valid targets found, searching...");
+                return 1000; // Wait before trying again
+            }
+
+            // Check equipment and weapon switching
+            if (equipmentManager.needsEquipmentChange(target)) { // Pass target to check
+                logToGUI("Equipment change required for " + target.getName());
+                if (!equipmentManager.switchToOptimalEquipment(target)) {
+                    logToGUI("Failed to switch to optimal equipment.");
+                    return 1500; // Wait before retrying
+                }
+            }
             
-            // Return dynamic sleep time based on current state
-            return getDynamicSleepTime();
+            // Execute combat
+            int combatSleep = combatEngine.executeCombat();
+            if (combatSleep > 0) {
+                return combatSleep;
+            }
+            
+            // Anti-ban activities
+            antiBanManager.performRandomAction();
+            
+            // Update GUI statistics
+            updateGUIStatistics();
+            
+            return antiBanManager.getRandomSleep(600, 1200);
             
         } catch (Exception e) {
-            Logger.error("Error in main loop: " + e.getMessage());
-            e.printStackTrace();
-            return 2000; // Wait 2 seconds on error
+            Logger.error("[AICombatScript] Error in main loop: " + e.getMessage());
+            logToGUI("Error: " + e.getMessage());
+            return 2000;
         }
     }
     
     /**
-     * Updates all script components
+     * Update GUI statistics display
      */
-    private void updateComponents() {
-        // Update managers
-        taskManager.update();
-        styleManager.update();
-        antiBanManager.update();
-        
-        // Record action for anti-ban
-        if (loopCount % 10 == 0) { // Every 10 loops
-            antiBanManager.recordAction("main_loop");
+    private void updateGUIStatistics() {
+        if (gui != null) {
+            SwingUtilities.invokeLater(() -> {
+                // Update runtime
+                long runtime = System.currentTimeMillis() - startTime;
+                gui.updateRuntime(runtime);
+                
+                // Update combat statistics
+                if (combatEngine != null) {
+                    gui.updateCombatStats(combatEngine.getTotalKills(), 0); // TODO: Add death tracking
+                }
+                
+                // Update banking statistics
+                if (bankManager != null) {
+                    gui.updateBankingStats(0, bankManager.getAverageBankingTime()); // TODO: Add banking count tracking
+                }
+                
+                // Update equipment status
+                if (equipmentManager != null) {
+                    gui.updateEquipmentStatus("Current Equipment"); // TODO: Add getCurrentEquipmentSet() method to EquipmentManager
+                }
+            });
         }
     }
     
     /**
-     * Executes the main combat loop
+     * Pause the script
      */
-    private void executeCombatLoop() {
-        Player localPlayer = Players.getLocal();
-        if (localPlayer == null) {
-            return;
-        }
-        
-        // Check if we need to eat or handle combat state
-        if (combatEngine.needsFood()) {
-            combatEngine.eatFood();
-            return;
-        }
-        
-        // Execute combat if not already in combat or if we need a new target
-        if (!localPlayer.isInCombat() || combatEngine.getCurrentTarget() == null) {
-            combatEngine.executeCombat();
-        }
-        
-        // Update combat statistics
-        combatEngine.updateStatistics();
+    public void pauseScript() {
+        isPaused = true;
+        logToGUI("Script paused");
+        Logger.log("[AICombatScript] Script paused by user");
     }
     
     /**
-     * Updates and logs status information
+     * Resume the script
      */
-    private void updateStatus() {
-        long currentTime = System.currentTimeMillis();
-        
-        // Update status every 30 seconds
-        if (currentTime - lastStatusUpdate > 30000) {
-            logStatusUpdate();
-            lastStatusUpdate = currentTime;
-        }
+    public void resumeScript() {
+        isPaused = false;
+        logToGUI("Script resumed");
+        Logger.log("[AICombatScript] Script resumed by user");
     }
     
     /**
-     * Logs comprehensive status information
+     * Stop the script
      */
-    private void logStatusUpdate() {
-        Logger.log("=== Status Update ===");
-        
-        // Runtime information
-        long runtime = System.currentTimeMillis() - scriptStartTime;
-        Logger.log("Runtime: " + (runtime / 60000) + " minutes");
-        Logger.log("Loop count: " + loopCount);
-        
-        // Current skill levels
-        if (trainingSkill != null) {
-            int currentLevel = Skills.getRealLevel(trainingSkill);
-            Logger.log("Current " + trainingSkill.getName() + " level: " + currentLevel);
-        }
-        
-        // Task status
-        TaskManager.CombatTask currentTask = taskManager.getCurrentTask();
-        if (currentTask != null) {
-            Logger.log("Current task: " + currentTask.getDescription());
-            Logger.log("Task progress: " + String.format("%.1f%%", currentTask.getProgressPercentage()));
-        }
-        
-        // Combat statistics
-        Logger.log("Combat stats: " + combatEngine.getStatisticsSummary());
-        
-        // Anti-ban status
-        Logger.log("Anti-ban: Fatigue " + antiBanManager.getFatigueLevel() + "%, Actions " + 
-                  antiBanManager.getAntiBanActionCount());
-        
-        Logger.log("===================");
-    }
-    
-    /**
-     * Calculates dynamic sleep time based on current state
-     * 
-     * @return sleep time in milliseconds
-     */
-    private int getDynamicSleepTime() {
-        Player localPlayer = Players.getLocal();
-        
-        // Faster loops during combat
-        if (localPlayer != null && localPlayer.isInCombat()) {
-            return 600; // 0.6 seconds during combat
-        }
-        
-        // Slower loops when idle
-        if (combatEngine.getCurrentTarget() == null) {
-            return 1500; // 1.5 seconds when no target
-        }
-        
-        // Normal loop speed
-        return 1000; // 1 second default
+    public void stopScript() {
+        isRunning = false;
+        logToGUI("Script stopping...");
+        Logger.log("[AICombatScript] Script stopped by user");
+        stop();
     }
 
     @Override
     public void onExit() {
-        Logger.log("=== AI Combat Script Stopping ===");
+        Logger.log("[AICombatScript] AI Combat Script v2.0 stopping...");
         
         try {
-            // Stop all managers
-            if (taskManager != null) {
-                taskManager.stop();
+            // Set script state
+            isRunning = false;
+            
+            // Close GUI
+            if (gui != null) {
+                SwingUtilities.invokeLater(() -> {
+                    gui.logMessage("Script stopped - GUI closing");
+                    gui.dispose();
+                });
             }
             
             // Log final statistics
             logFinalStatistics();
             
-            Logger.log("AI Combat Script stopped successfully!");
+            Logger.log("[AICombatScript] Script stopped successfully!");
             
         } catch (Exception e) {
-            Logger.error("Error during script shutdown: " + e.getMessage());
+            Logger.error("[AICombatScript] Error during shutdown: " + e.getMessage());
         }
     }
     
     /**
-     * Logs final script statistics
+     * Log final script statistics
      */
     private void logFinalStatistics() {
-        long totalRuntime = System.currentTimeMillis() - scriptStartTime;
+        long totalRuntime = System.currentTimeMillis() - startTime;
         
-        Logger.log("=== Final Statistics ===");
-        Logger.log("Total runtime: " + (totalRuntime / 60000) + " minutes");
-        Logger.log("Total loops: " + loopCount);
-        
-        if (taskManager != null) {
-            Logger.log("Completed tasks: " + taskManager.getCompletedTaskCount());
-        }
+        Logger.log("[AICombatScript] === Final Statistics ===");
+        Logger.log("[AICombatScript] Total runtime: " + (totalRuntime / 60000) + " minutes");
         
         if (combatEngine != null) {
-            Logger.log("Final combat stats: " + combatEngine.getStatisticsSummary());
+            Logger.log("[AICombatScript] Combat stats: " + combatEngine.getTotalKills() + " kills");
         }
         
-        if (antiBanManager != null) {
-            Logger.log("Anti-ban summary: " + antiBanManager.getStatusSummary());
+        if (bankManager != null) {
+            Logger.log("[AICombatScript] Banking stats: " + bankManager.getStatistics());
         }
         
-        Logger.log("========================");
-    }
-    
-    // Public methods for external configuration (GUI integration)
-    
-    /**
-     * Sets the target NPC name
-     * 
-     * @param npcName name of NPC to target
-     */
-    public void setTargetNpc(String npcName) {
-        if (npcName != null && !npcName.trim().isEmpty()) {
-            this.targetNpcName = npcName.trim();
-            
-            if (targetSelector != null) {
-                targetSelector.clearTargetNames();
-                targetSelector.addTargetName(npcName);
-            }
-            
-            Logger.log("Target NPC set to: " + npcName);
-        }
-    }
-    
-    /**
-     * Sets the target NPC ID
-     * 
-     * @param npcId ID of NPC to target
-     */
-    public void setTargetNpcId(int npcId) {
-        if (targetSelector != null) {
-            targetSelector.clearTargetIds();
-            targetSelector.addTargetId(npcId);
+        if (equipmentManager != null) {
+            Logger.log("[AICombatScript] Equipment statistics: " + equipmentManager.getStatistics());
         }
         
-        Logger.log("Target NPC ID set to: " + npcId);
+        Logger.log("[AICombatScript] ========================");
+    }
+    
+    // Getter methods for GUI integration
+    
+    /**
+     * Get current script status
+     */
+    public boolean isRunning() {
+        return isRunning;
     }
     
     /**
-     * Sets the training skill and target level
-     * 
-     * @param skill skill to train
-     * @param level target level
+     * Get current pause status
      */
-    public void setTrainingGoal(Skill skill, int level) {
-        if (skill != null && level > 0) {
-            this.trainingSkill = skill;
-            this.targetLevel = level;
-            
-            Logger.log("Training goal set: " + skill.getName() + " to level " + level);
-        }
+    public boolean isPaused() {
+        return isPaused;
     }
     
     /**
-     * Sets the combat style
-     * 
-     * @param style combat style name
+     * Get script runtime
      */
-    public void setCombatStyle(String style) {
-        if (style != null && !style.trim().isEmpty()) {
-            this.combatStyle = style.trim().toLowerCase();
-            
-            Logger.log("Combat style set to: " + style);
-        }
+    public long getRuntime() {
+        return System.currentTimeMillis() - startTime;
     }
     
     /**
-     * Adds a new training task
-     * 
-     * @param description task description
-     * @param npcName target NPC name
-     * @param skill skill to train
-     * @param level target level
-     * @param style combat style
+     * Get combat engine reference
      */
-    public void addTrainingTask(String description, String npcName, Skill skill, int level, String style) {
-        if (taskManager != null) {
-            taskManager.addSimpleTask(description, npcName, skill, level, style);
-            Logger.log("Added training task: " + description);
-        }
-    }
-    
-    // Getter methods for status monitoring
-    
-    public boolean isInitialized() {
-        return isInitialized;
-    }
-    
-    public TaskManager getTaskManager() {
-        return taskManager;
-    }
-    
     public CombatEngine getCombatEngine() {
         return combatEngine;
     }
     
+    /**
+     * Get bank manager reference
+     */
+    public BankManager getBankManager() {
+        return bankManager;
+    }
+    
+    /**
+     * Get equipment manager reference
+     */
+    public EquipmentManager getEquipmentManager() {
+        return equipmentManager;
+    }
+    
+    /**
+     * Get weapon manager reference
+     */
+    public WeaponManager getWeaponManager() {
+        return weaponManager;
+    }
+    
+    /**
+     * Get task manager reference
+     */
+    public TaskManager getTaskManager() {
+        return taskManager;
+    }
+    
+    /**
+     * Get anti-ban manager reference
+     */
     public AntiBanManager getAntiBanManager() {
         return antiBanManager;
     }

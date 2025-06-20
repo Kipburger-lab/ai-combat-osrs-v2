@@ -589,6 +589,24 @@ public class AntiBanManager {
     }
     
     /**
+     * Gets a random sleep duration between min and max values
+     * 
+     * @param min minimum sleep time in milliseconds
+     * @param max maximum sleep time in milliseconds
+     * @return random sleep duration
+     */
+    public int getRandomSleep(int min, int max) {
+        return (int) getHumanizedDelay(min, max);
+    }
+    
+    /**
+     * Performs a random anti-ban action (public wrapper)
+     */
+    public void performRandomAction() {
+        performRandomAntiBanAction();
+    }
+    
+    /**
      * Gets a status summary of the anti-ban system
      * 
      * @return status summary string
@@ -621,5 +639,17 @@ public class AntiBanManager {
         mouseSpeeds.clear();
         
         Logger.log("AntiBanManager reset");
+    }
+    
+    /**
+     * Get anti-ban statistics
+     */
+    public String getStatistics() {
+        long currentTime = System.currentTimeMillis();
+        long sessionDuration = currentTime - sessionStartTime;
+        double antiBanRatio = actionCount > 0 ? (double) antiBanActionCount / actionCount * 100 : 0;
+        
+        return String.format("Actions: %d, Anti-ban: %d (%.1f%%), Fatigue: %d, Session: %d min",
+            actionCount, antiBanActionCount, antiBanRatio, fatigueLevel, sessionDuration / 60000);
     }
 }

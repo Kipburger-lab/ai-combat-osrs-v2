@@ -78,6 +78,10 @@ public class TargetSelector {
      * 
      * @return best target NPC or null if none found
      */
+    public NPC selectNextTarget() {
+        return selectBestTarget();
+    }
+
     public NPC selectBestTarget() {
         try {
             List<NPC> candidates = getCandidateTargets();
