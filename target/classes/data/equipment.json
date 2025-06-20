@@ -1,0 +1,348 @@
+[
+  {
+    "itemId": 1277,
+    "name": "Dragon longsword",
+    "description": "A razor-sharp sword made from dragon metal.",
+    "slot": "WEAPON",
+    "type": "SWORD",
+    "value": 100800,
+    "levelRequirements": {
+      "attack": 60
+    },
+    "combatBonuses": {
+      "attackStab": 69,
+      "attackSlash": 82,
+      "attackCrush": 0,
+      "attackMagic": 0,
+      "attackRanged": 0,
+      "defenceStab": 0,
+      "defenceSlash": 0,
+      "defenceCrush": 0,
+      "defenceMagic": 0,
+      "defenceRanged": 0,
+      "meleeStrength": 82,
+      "rangedStrength": 0,
+      "magicDamage": 0,
+      "prayer": 0
+    },
+    "tradeable": true,
+    "degradable": false,
+    "stackable": false,
+    "weight": 1.814,
+    "weaponProperties": {
+      "attackSpeed": 4,
+      "weaponType": "SWORD",
+      "combatStyles": ["STAB", "SLASH", "BLOCK"],
+      "specialAttack": false,
+      "twoHanded": false
+    }
+  },
+  {
+    "itemId": 1333,
+    "name": "Rune scimitar",
+    "description": "A vicious, curved sword.",
+    "slot": "WEAPON",
+    "type": "SCIMITAR",
+    "value": 15000,
+    "levelRequirements": {
+      "attack": 40
+    },
+    "combatBonuses": {
+      "attackStab": 45,
+      "attackSlash": 67,
+      "attackCrush": -2,
+      "attackMagic": 0,
+      "attackRanged": 0,
+      "defenceStab": 1,
+      "defenceSlash": 0,
+      "defenceCrush": 0,
+      "defenceMagic": 0,
+      "defenceRanged": 0,
+      "meleeStrength": 66,
+      "rangedStrength": 0,
+      "magicDamage": 0,
+      "prayer": 0
+    },
+    "tradeable": true,
+    "degradable": false,
+    "stackable": false,
+    "weight": 1.814,
+    "weaponProperties": {
+      "attackSpeed": 4,
+      "weaponType": "SCIMITAR",
+      "combatStyles": ["SLASH", "LUNGE", "BLOCK"],
+      "specialAttack": false,
+      "twoHanded": false
+    }
+  },
+  {
+    "itemId": 1163,
+    "name": "Rune full helm",
+    "description": "A medium weight helmet.",
+    "slot": "HEAD",
+    "type": "FULL_HELM",
+    "value": 20800,
+    "levelRequirements": {
+      "defence": 40
+    },
+    "combatBonuses": {
+      "attackStab": 0,
+      "attackSlash": 0,
+      "attackCrush": 0,
+      "attackMagic": -3,
+      "attackRanged": -2,
+      "defenceStab": 6,
+      "defenceSlash": 7,
+      "defenceCrush": 5,
+      "defenceMagic": -1,
+      "defenceRanged": 6,
+      "meleeStrength": 0,
+      "rangedStrength": 0,
+      "magicDamage": 0,
+      "prayer": 0
+    },
+    "tradeable": true,
+    "degradable": false,
+    "stackable": false,
+    "weight": 2.267,
+    "armorProperties": {
+      "armorType": "MELEE",
+      "defenceLevel": 40,
+      "setBonus": false
+    }
+  },
+  {
+    "itemId": 1127,
+    "name": "Rune platebody",
+    "description": "A platebody made of runite.",
+    "slot": "BODY",
+    "type": "PLATEBODY",
+    "value": 65000,
+    "levelRequirements": {
+      "defence": 40
+    },
+    "combatBonuses": {
+      "attackStab": 0,
+      "attackSlash": 0,
+      "attackCrush": 0,
+      "attackMagic": -30,
+      "attackRanged": -10,
+      "defenceStab": 64,
+      "defenceSlash": 62,
+      "defenceCrush": 68,
+      "defenceMagic": -6,
+      "defenceRanged": 64,
+      "meleeStrength": 0,
+      "rangedStrength": 0,
+      "magicDamage": 0,
+      "prayer": 0
+    },
+    "tradeable": true,
+    "degradable": false,
+    "stackable": false,
+    "weight": 9.979,
+    "armorProperties": {
+      "armorType": "MELEE",
+      "defenceLevel": 40,
+      "setBonus": false
+    }
+  },
+  {
+    "itemId": 1079,
+    "name": "Rune platelegs",
+    "description": "These look pretty heavy.",
+    "slot": "LEGS",
+    "type": "PLATELEGS",
+    "value": 37500,
+    "levelRequirements": {
+      "defence": 40
+    },
+    "combatBonuses": {
+      "attackStab": 0,
+      "attackSlash": 0,
+      "attackCrush": 0,
+      "attackMagic": -21,
+      "attackRanged": -7,
+      "defenceStab": 37,
+      "defenceSlash": 35,
+      "defenceCrush": 42,
+      "defenceMagic": -4,
+      "defenceRanged": 37,
+      "meleeStrength": 0,
+      "rangedStrength": 0,
+      "magicDamage": 0,
+      "prayer": 0
+    },
+    "tradeable": true,
+    "degradable": false,
+    "stackable": false,
+    "weight": 9.071,
+    "armorProperties": {
+      "armorType": "MELEE",
+      "defenceLevel": 40,
+      "setBonus": false
+    }
+  },
+  {
+    "itemId": 1201,
+    "name": "Rune kiteshield",
+    "description": "A large metal shield.",
+    "slot": "SHIELD",
+    "type": "KITESHIELD",
+    "value": 32000,
+    "levelRequirements": {
+      "defence": 40
+    },
+    "combatBonuses": {
+      "attackStab": 0,
+      "attackSlash": 0,
+      "attackCrush": 0,
+      "attackMagic": -10,
+      "attackRanged": -5,
+      "defenceStab": 44,
+      "defenceSlash": 41,
+      "defenceCrush": 46,
+      "defenceMagic": -3,
+      "defenceRanged": 44,
+      "meleeStrength": 0,
+      "rangedStrength": 0,
+      "magicDamage": 0,
+      "prayer": 0
+    },
+    "tradeable": true,
+    "degradable": false,
+    "stackable": false,
+    "weight": 5.443,
+    "armorProperties": {
+      "armorType": "MELEE",
+      "defenceLevel": 40,
+      "setBonus": false
+    }
+  },
+  {
+    "itemId": 1061,
+    "name": "Leather boots",
+    "description": "These boots are made for walking.",
+    "slot": "FEET",
+    "type": "BOOTS",
+    "value": 1,
+    "levelRequirements": {},
+    "combatBonuses": {
+      "attackStab": 0,
+      "attackSlash": 0,
+      "attackCrush": 0,
+      "attackMagic": 0,
+      "attackRanged": 0,
+      "defenceStab": 0,
+      "defenceSlash": 0,
+      "defenceCrush": 0,
+      "defenceMagic": 0,
+      "defenceRanged": 0,
+      "meleeStrength": 0,
+      "rangedStrength": 0,
+      "magicDamage": 0,
+      "prayer": 0
+    },
+    "tradeable": true,
+    "degradable": false,
+    "stackable": false,
+    "weight": 0.453,
+    "armorProperties": {
+      "armorType": "RANGED",
+      "defenceLevel": 1,
+      "setBonus": false
+    }
+  },
+  {
+    "itemId": 1063,
+    "name": "Leather gloves",
+    "description": "These gloves are made from leather.",
+    "slot": "HANDS",
+    "type": "GLOVES",
+    "value": 1,
+    "levelRequirements": {},
+    "combatBonuses": {
+      "attackStab": 0,
+      "attackSlash": 0,
+      "attackCrush": 0,
+      "attackMagic": 0,
+      "attackRanged": 0,
+      "defenceStab": 0,
+      "defenceSlash": 0,
+      "defenceCrush": 0,
+      "defenceMagic": 0,
+      "defenceRanged": 0,
+      "meleeStrength": 0,
+      "rangedStrength": 0,
+      "magicDamage": 0,
+      "prayer": 0
+    },
+    "tradeable": true,
+    "degradable": false,
+    "stackable": false,
+    "weight": 0.453,
+    "armorProperties": {
+      "armorType": "RANGED",
+      "defenceLevel": 1,
+      "setBonus": false
+    }
+  },
+  {
+    "itemId": 1712,
+    "name": "Amulet of glory",
+    "description": "A very powerful dragonstone amulet.",
+    "slot": "NECK",
+    "type": "AMULET",
+    "value": 13000,
+    "levelRequirements": {},
+    "combatBonuses": {
+      "attackStab": 0,
+      "attackSlash": 0,
+      "attackCrush": 0,
+      "attackMagic": 0,
+      "attackRanged": 0,
+      "defenceStab": 0,
+      "defenceSlash": 0,
+      "defenceCrush": 0,
+      "defenceMagic": 3,
+      "defenceRanged": 0,
+      "meleeStrength": 0,
+      "rangedStrength": 0,
+      "magicDamage": 0,
+      "prayer": 0
+    },
+    "tradeable": true,
+    "degradable": false,
+    "stackable": false,
+    "weight": 0.009
+  },
+  {
+    "itemId": 1725,
+    "name": "Amulet of strength",
+    "description": "A ruby amulet that increases the wearer's strength.",
+    "slot": "NECK",
+    "type": "AMULET",
+    "value": 1200,
+    "levelRequirements": {},
+    "combatBonuses": {
+      "attackStab": 0,
+      "attackSlash": 0,
+      "attackCrush": 0,
+      "attackMagic": 0,
+      "attackRanged": 0,
+      "defenceStab": 0,
+      "defenceSlash": 0,
+      "defenceCrush": 0,
+      "defenceMagic": 0,
+      "defenceRanged": 0,
+      "meleeStrength": 10,
+      "rangedStrength": 0,
+      "magicDamage": 0,
+      "prayer": 0
+    },
+    "tradeable": true,
+    "degradable": false,
+    "stackable": false,
+    "weight": 0.009
+  }
+]
