@@ -1,0 +1,16 @@
+combat\TargetSelector.class
+antiban\AntiBanManager.class
+tasks\TaskManager$CombatTask.class
+combat\CombatStyleManager.class
+combat\TargetSelector$TargetPriority.class
+core\CombatEngine.class
+combat\CombatStyleManager$CombatStyle.class
+tasks\TaskManager$CombatTask$TaskStatus.class
+antiban\AntiBanManager$BehaviorProfile.class
+combat\CombatStyleManager$1.class
+antiban\AntiBanManager$1.class
+combat\CombatStyleManager$WeaponType.class
+scripts\AICombatScript.class
+tasks\TaskManager.class
+combat\TargetSelector$1.class
+antiban\AntiBanManager$AntiBanAction.class
