@@ -1,0 +1,174 @@
+[
+  {
+    "npcId": 1,
+    "name": "Cow",
+    "description": "A dairy cow.",
+    "combatLevel": 2,
+    "hitpoints": 8,
+    "maxHit": 1,
+    "attackStyle": "MELEE",
+    "aggressive": false,
+    "poisonous": false,
+    "type": "ANIMAL",
+    "slayerCategory": "NONE",
+    "slayerLevel": 0,
+    "region": "Lumbridge",
+    "location": "Lumbridge Cow Field",
+    "respawnTime": 5000,
+    "wanderRadius": 3,
+    "drops": [
+      {"itemId": 1739, "name": "Cowhide", "quantity": 1, "rarity": "ALWAYS"},
+      {"itemId": 2132, "name": "Raw beef", "quantity": 1, "rarity": "ALWAYS"}
+    ]
+  },
+  {
+    "npcId": 2,
+    "name": "Goblin",
+    "description": "An ugly green creature.",
+    "combatLevel": 5,
+    "hitpoints": 12,
+    "maxHit": 1,
+    "attackStyle": "MELEE",
+    "aggressive": false,
+    "poisonous": false,
+    "type": "HUMANOID",
+    "slayerCategory": "NONE",
+    "slayerLevel": 0,
+    "region": "Lumbridge",
+    "location": "Lumbridge Swamp",
+    "respawnTime": 5000,
+    "wanderRadius": 5,
+    "drops": [
+      {"itemId": 995, "name": "Coins", "quantity": 5, "rarity": "COMMON"}
+    ]
+  },
+  {
+    "npcId": 3,
+    "name": "Giant rat",
+    "description": "A large rat.",
+    "combatLevel": 6,
+    "hitpoints": 8,
+    "maxHit": 1,
+    "attackStyle": "MELEE",
+    "aggressive": false,
+    "poisonous": false,
+    "type": "ANIMAL",
+    "slayerCategory": "NONE",
+    "slayerLevel": 0,
+    "region": "Varrock",
+    "location": "Varrock Sewers",
+    "respawnTime": 5000,
+    "wanderRadius": 3,
+    "drops": [
+      {"itemId": 995, "name": "Coins", "quantity": 3, "rarity": "COMMON"}
+    ]
+  },
+  {
+    "npcId": 4,
+    "name": "Hill Giant",
+    "description": "A big, dumb giant.",
+    "combatLevel": 28,
+    "hitpoints": 35,
+    "maxHit": 4,
+    "attackStyle": "MELEE",
+    "aggressive": false,
+    "poisonous": false,
+    "type": "GIANT",
+    "slayerCategory": "NONE",
+    "slayerLevel": 0,
+    "region": "Edgeville",
+    "location": "Hill Giant Dungeon",
+    "respawnTime": 5000,
+    "wanderRadius": 5,
+    "drops": [
+      {"itemId": 526, "name": "Big bones", "quantity": 1, "rarity": "ALWAYS"},
+      {"itemId": 995, "name": "Coins", "quantity": 15, "rarity": "COMMON"}
+    ]
+  },
+  {
+    "npcId": 5,
+    "name": "Rock Crab",
+    "description": "A crab that looks like a rock.",
+    "combatLevel": 13,
+    "hitpoints": 50,
+    "maxHit": 1,
+    "attackStyle": "MELEE",
+    "aggressive": true,
+    "poisonous": false,
+    "type": "ANIMAL",
+    "slayerCategory": "NONE",
+    "slayerLevel": 0,
+    "region": "Rellekka",
+    "location": "Rellekka Beach",
+    "respawnTime": 5000,
+    "wanderRadius": 2,
+    "drops": [
+      {"itemId": 995, "name": "Coins", "quantity": 10, "rarity": "COMMON"}
+    ]
+  },
+  {
+    "npcId": 6,
+    "name": "Sand Crab",
+    "description": "A crab that burrows in sand.",
+    "combatLevel": 15,
+    "hitpoints": 60,
+    "maxHit": 1,
+    "attackStyle": "MELEE",
+    "aggressive": true,
+    "poisonous": false,
+    "type": "ANIMAL",
+    "slayerCategory": "NONE",
+    "slayerLevel": 0,
+    "region": "Zeah",
+    "location": "Crabclaw Caves",
+    "respawnTime": 5000,
+    "wanderRadius": 2,
+    "drops": [
+      {"itemId": 995, "name": "Coins", "quantity": 12, "rarity": "COMMON"}
+    ]
+  },
+  {
+    "npcId": 7,
+    "name": "Moss Giant",
+    "description": "A big mossy giant.",
+    "combatLevel": 42,
+    "hitpoints": 60,
+    "maxHit": 6,
+    "attackStyle": "MELEE",
+    "aggressive": false,
+    "poisonous": false,
+    "type": "GIANT",
+    "slayerCategory": "NONE",
+    "slayerLevel": 0,
+    "region": "Varrock",
+    "location": "Varrock Sewers",
+    "respawnTime": 5000,
+    "wanderRadius": 5,
+    "drops": [
+      {"itemId": 526, "name": "Big bones", "quantity": 1, "rarity": "ALWAYS"},
+      {"itemId": 995, "name": "Coins", "quantity": 25, "rarity": "COMMON"}
+    ]
+  },
+  {
+    "npcId": 8,
+    "name": "Fire Giant",
+    "description": "A giant wreathed in flames.",
+    "combatLevel": 86,
+    "hitpoints": 111,
+    "maxHit": 9,
+    "attackStyle": "MELEE",
+    "aggressive": false,
+    "poisonous": false,
+    "type": "GIANT",
+    "slayerCategory": "NONE",
+    "slayerLevel": 0,
+    "region": "Karamja",
+    "location": "Brimhaven Dungeon",
+    "respawnTime": 5000,
+    "wanderRadius": 5,
+    "drops": [
+      {"itemId": 526, "name": "Big bones", "quantity": 1, "rarity": "ALWAYS"},
+      {"itemId": 995, "name": "Coins", "quantity": 50, "rarity": "COMMON"}
+    ]
+  }
+]

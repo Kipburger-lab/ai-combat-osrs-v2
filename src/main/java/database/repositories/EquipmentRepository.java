@@ -1,6 +1,8 @@
 package database.repositories;
 
 import database.models.Equipment;
+import database.models.WeaponType;
+import database.models.ArmorType;
 import database.core.DataLoader;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -22,8 +24,8 @@ public class EquipmentRepository {
     private final Map<Integer, Equipment> equipmentById;
     private final Map<String, List<Equipment>> equipmentByName;
     private final Map<Equipment.EquipmentSlot, List<Equipment>> equipmentBySlot;
-    private final Map<Equipment.WeaponType, List<Equipment>> equipmentByWeaponType;
-    private final Map<Equipment.ArmorType, List<Equipment>> equipmentByArmorType;
+    private final Map<WeaponType, List<Equipment>> equipmentByWeaponType;
+    private final Map<ArmorType, List<Equipment>> equipmentByArmorType;
     private final DataLoader dataLoader;
     private final Gson gson;
     
@@ -44,12 +46,12 @@ public class EquipmentRepository {
         }
         
         // Initialize weapon type maps
-        for (Equipment.WeaponType type : Equipment.WeaponType.values()) {
+        for (WeaponType type : WeaponType.values()) {
             equipmentByWeaponType.put(type, new ArrayList<>());
         }
         
         // Initialize armor type maps
-        for (Equipment.ArmorType type : Equipment.ArmorType.values()) {
+        for (ArmorType type : ArmorType.values()) {
             equipmentByArmorType.put(type, new ArrayList<>());
         }
     }
@@ -79,26 +81,8 @@ public class EquipmentRepository {
      * Load equipment data from JSON file
      */
     private void loadEquipmentData() {
-        try {
-            String jsonData = dataLoader.loadJsonData(EQUIPMENT_DATA_FILE);
-            Type listType = new TypeToken<List<Equipment>>(){}.getType();
-            List<Equipment> equipmentList = gson.fromJson(jsonData, listType);
-            
-            if (equipmentList != null) {
-                for (Equipment equipment : equipmentList) {
-                    if (equipment != null && equipment.getItemId() > 0) {
-                        equipmentById.put(equipment.getItemId(), equipment);
-                    }
-                }
-                logger.info(String.format("Loaded %d equipment items from %s", equipmentList.size(), EQUIPMENT_DATA_FILE));
-            } else {
-                logger.warning("No equipment data found in " + EQUIPMENT_DATA_FILE);
-                loadDefaultEquipment();
-            }
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Failed to load equipment data from file, using defaults", e);
-            loadDefaultEquipment();
-        }
+        // Load hardcoded equipment data since JSON resources aren't being packaged properly
+        loadDefaultEquipment();
     }
     
     /**
@@ -108,21 +92,21 @@ public class EquipmentRepository {
         logger.info("Loading default equipment data...");
         
         // Basic weapons
-        addDefaultWeapon(1205, "Bronze dagger", Equipment.WeaponType.DAGGER, 1, 1);
-        addDefaultWeapon(1277, "Iron sword", Equipment.WeaponType.SWORD, 1, 1);
-        addDefaultWeapon(1323, "Steel scimitar", Equipment.WeaponType.SCIMITAR, 5, 5);
-        addDefaultWeapon(1333, "Mithril scimitar", Equipment.WeaponType.SCIMITAR, 20, 20);
-        addDefaultWeapon(1343, "Adamant scimitar", Equipment.WeaponType.SCIMITAR, 30, 30);
-        addDefaultWeapon(1353, "Rune scimitar", Equipment.WeaponType.SCIMITAR, 40, 40);
-        addDefaultWeapon(4587, "Dragon scimitar", Equipment.WeaponType.SCIMITAR, 60, 60);
+        addDefaultWeapon(1205, "Bronze dagger", WeaponType.DAGGER, 1, 1);
+        addDefaultWeapon(1277, "Iron sword", WeaponType.SWORD, 1, 1);
+        addDefaultWeapon(1323, "Steel scimitar", WeaponType.SCIMITAR, 5, 5);
+        addDefaultWeapon(1333, "Mithril scimitar", WeaponType.SCIMITAR, 20, 20);
+        addDefaultWeapon(1343, "Adamant scimitar", WeaponType.SCIMITAR, 30, 30);
+        addDefaultWeapon(1353, "Rune scimitar", WeaponType.SCIMITAR, 40, 40);
+        addDefaultWeapon(4587, "Dragon scimitar", WeaponType.SCIMITAR, 60, 60);
         
         // Ranged weapons
-        addDefaultRangedWeapon(841, "Shortbow", Equipment.WeaponType.BOW, 1, 1);
-        addDefaultRangedWeapon(843, "Oak shortbow", Equipment.WeaponType.BOW, 5, 5);
-        addDefaultRangedWeapon(845, "Willow shortbow", Equipment.WeaponType.BOW, 20, 20);
-        addDefaultRangedWeapon(847, "Maple shortbow", Equipment.WeaponType.BOW, 30, 30);
-        addDefaultRangedWeapon(849, "Yew shortbow", Equipment.WeaponType.BOW, 40, 40);
-        addDefaultRangedWeapon(851, "Magic shortbow", Equipment.WeaponType.BOW, 50, 50);
+        addDefaultRangedWeapon(841, "Shortbow", WeaponType.SHORTBOW, 1, 1);
+        addDefaultRangedWeapon(843, "Oak shortbow", WeaponType.SHORTBOW, 5, 5);
+        addDefaultRangedWeapon(845, "Willow shortbow", WeaponType.SHORTBOW, 20, 20);
+        addDefaultRangedWeapon(847, "Maple shortbow", WeaponType.SHORTBOW, 30, 30);
+        addDefaultRangedWeapon(849, "Yew shortbow", WeaponType.SHORTBOW, 40, 40);
+        addDefaultRangedWeapon(851, "Magic shortbow", WeaponType.SHORTBOW, 50, 50);
         
         // Basic armor sets
         addDefaultArmorSet("Bronze", 1, 1);
@@ -135,7 +119,7 @@ public class EquipmentRepository {
         logger.info(String.format("Loaded %d default equipment items", equipmentById.size()));
     }
     
-    private void addDefaultWeapon(int id, String name, Equipment.WeaponType type, int attackReq, int defenseReq) {
+    private void addDefaultWeapon(int id, String name, WeaponType type, int attackReq, int defenseReq) {
         Equipment weapon = new Equipment(id, name, Equipment.EquipmentSlot.WEAPON);
         weapon.setWeaponType(type);
         weapon.addLevelRequirement("attack", attackReq);
@@ -145,7 +129,7 @@ public class EquipmentRepository {
         equipmentById.put(id, weapon);
     }
     
-    private void addDefaultRangedWeapon(int id, String name, Equipment.WeaponType type, int rangedReq, int defenseReq) {
+    private void addDefaultRangedWeapon(int id, String name, WeaponType type, int rangedReq, int defenseReq) {
         Equipment weapon = new Equipment(id, name, Equipment.EquipmentSlot.WEAPON);
         weapon.setWeaponType(type);
         weapon.addLevelRequirement("ranged", rangedReq);
@@ -160,7 +144,7 @@ public class EquipmentRepository {
         
         // Helmet
         Equipment helmet = new Equipment(baseId + 1, material + " full helm", Equipment.EquipmentSlot.HEAD);
-        helmet.setArmorType(Equipment.ArmorType.MELEE);
+        helmet.setArmorType(ArmorType.MELEE);
         helmet.addLevelRequirement("defence", defenseReq);
         helmet.setTradeable(true);
         helmet.setValue(500 * defenseReq);
@@ -168,7 +152,7 @@ public class EquipmentRepository {
         
         // Body
         Equipment body = new Equipment(baseId + 2, material + " platebody", Equipment.EquipmentSlot.BODY);
-        body.setArmorType(Equipment.ArmorType.MELEE);
+        body.setArmorType(ArmorType.MELEE);
         body.addLevelRequirement("defence", defenseReq);
         body.setTradeable(true);
         body.setValue(1000 * defenseReq);
@@ -176,7 +160,7 @@ public class EquipmentRepository {
         
         // Legs
         Equipment legs = new Equipment(baseId + 3, material + " platelegs", Equipment.EquipmentSlot.LEGS);
-        legs.setArmorType(Equipment.ArmorType.MELEE);
+        legs.setArmorType(ArmorType.MELEE);
         legs.addLevelRequirement("defence", defenseReq);
         legs.setTradeable(true);
         legs.setValue(750 * defenseReq);
@@ -268,7 +252,7 @@ public class EquipmentRepository {
     /**
      * Get equipment by weapon type
      */
-    public List<Equipment> getByWeaponType(Equipment.WeaponType weaponType) {
+    public List<Equipment> getByWeaponType(WeaponType weaponType) {
         ensureInitialized();
         return new ArrayList<>(equipmentByWeaponType.getOrDefault(weaponType, new ArrayList<>()));
     }
@@ -276,7 +260,7 @@ public class EquipmentRepository {
     /**
      * Get equipment by armor type
      */
-    public List<Equipment> getByArmorType(Equipment.ArmorType armorType) {
+    public List<Equipment> getByArmorType(ArmorType armorType) {
         ensureInitialized();
         return new ArrayList<>(equipmentByArmorType.getOrDefault(armorType, new ArrayList<>()));
     }
@@ -441,14 +425,14 @@ public class EquipmentRepository {
         
         // Count by weapon types
         Map<String, Integer> weaponTypeCounts = new HashMap<>();
-        for (Equipment.WeaponType type : Equipment.WeaponType.values()) {
+        for (WeaponType type : WeaponType.values()) {
             weaponTypeCounts.put(type.name(), equipmentByWeaponType.get(type).size());
         }
         stats.put("weaponTypes", weaponTypeCounts);
         
         // Count by armor types
         Map<String, Integer> armorTypeCounts = new HashMap<>();
-        for (Equipment.ArmorType type : Equipment.ArmorType.values()) {
+        for (ArmorType type : ArmorType.values()) {
             armorTypeCounts.put(type.name(), equipmentByArmorType.get(type).size());
         }
         stats.put("armorTypes", armorTypeCounts);

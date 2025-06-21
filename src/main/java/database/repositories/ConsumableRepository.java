@@ -71,26 +71,8 @@ public class ConsumableRepository {
      * Load consumable data from JSON file
      */
     private void loadConsumableData() {
-        try {
-            String jsonData = dataLoader.loadJsonData(CONSUMABLE_DATA_FILE);
-            Type listType = new TypeToken<List<Consumable>>(){}.getType();
-            List<Consumable> consumableList = gson.fromJson(jsonData, listType);
-            
-            if (consumableList != null) {
-                for (Consumable consumable : consumableList) {
-                    if (consumable != null && consumable.getItemId() > 0) {
-                        consumablesById.put(consumable.getItemId(), consumable);
-                    }
-                }
-                logger.info(String.format("Loaded %d consumables from %s", consumableList.size(), CONSUMABLE_DATA_FILE));
-            } else {
-                logger.warning("No consumable data found in " + CONSUMABLE_DATA_FILE);
-                loadDefaultConsumables();
-            }
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Failed to load consumable data from file, using defaults", e);
-            loadDefaultConsumables();
-        }
+        // Load hardcoded consumable data since JSON resources aren't being packaged properly
+        loadDefaultConsumables();
     }
     
     /**
@@ -146,49 +128,49 @@ public class ConsumableRepository {
         addDefaultFood(15272, "Anglerfish", 22, 82, 1000, true); // Can boost above max HP
         
         // Combat potions
-        addDefaultPotion(2428, "Attack potion", Consumable.PotionEffect.ATTACK_BOOST, 3, 1, 37);
-        addDefaultPotion(113, "Strength potion", Consumable.PotionEffect.STRENGTH_BOOST, 3, 1, 37);
-        addDefaultPotion(2442, "Defence potion", Consumable.PotionEffect.DEFENCE_BOOST, 3, 1, 37);
-        addDefaultPotion(2436, "Super attack", Consumable.PotionEffect.ATTACK_BOOST, 5, 45, 188);
-        addDefaultPotion(2440, "Super strength", Consumable.PotionEffect.STRENGTH_BOOST, 5, 55, 313);
-        addDefaultPotion(2444, "Super defence", Consumable.PotionEffect.DEFENCE_BOOST, 5, 66, 469);
-        addDefaultPotion(2432, "Combat potion", Consumable.PotionEffect.COMBAT_BOOST, 4, 48, 225);
-        addDefaultPotion(12695, "Super combat potion", Consumable.PotionEffect.SUPER_COMBAT, 4, 90, 5000);
+        addDefaultPotion(2428, "Attack potion", Consumable.EffectType.STAT_BOOST, 3, 1, 37);
+        addDefaultPotion(113, "Strength potion", Consumable.EffectType.STAT_BOOST, 3, 1, 37);
+        addDefaultPotion(2442, "Defence potion", Consumable.EffectType.STAT_BOOST, 3, 1, 37);
+        addDefaultPotion(2436, "Super attack", Consumable.EffectType.STAT_BOOST, 5, 45, 188);
+        addDefaultPotion(2440, "Super strength", Consumable.EffectType.STAT_BOOST, 5, 55, 313);
+        addDefaultPotion(2444, "Super defence", Consumable.EffectType.STAT_BOOST, 5, 66, 469);
+        addDefaultPotion(2432, "Combat potion", Consumable.EffectType.STAT_BOOST, 4, 48, 225);
+        addDefaultPotion(12695, "Super combat potion", Consumable.EffectType.STAT_BOOST, 4, 90, 5000);
         
         // Ranging potions
-        addDefaultPotion(2444, "Ranging potion", Consumable.PotionEffect.RANGED_BOOST, 4, 43, 163);
-        addDefaultPotion(2444, "Super ranging", Consumable.PotionEffect.RANGED_BOOST, 5, 72, 938);
+        addDefaultPotion(2444, "Ranging potion", Consumable.EffectType.STAT_BOOST, 4, 43, 163);
+        addDefaultPotion(2444, "Super ranging", Consumable.EffectType.STAT_BOOST, 5, 72, 938);
         
         // Magic potions
-        addDefaultPotion(3040, "Magic potion", Consumable.PotionEffect.MAGIC_BOOST, 4, 76, 1000);
+        addDefaultPotion(3040, "Magic potion", Consumable.EffectType.STAT_BOOST, 4, 76, 1000);
         
         // Prayer potions
-        addDefaultPotion(2434, "Prayer potion", Consumable.PotionEffect.PRAYER_RESTORE, 7, 38, 100);
-        addDefaultPotion(10925, "Sanfew serum", Consumable.PotionEffect.PRAYER_RESTORE, 4, 65, 1500);
-        addDefaultPotion(6685, "Saradomin brew", Consumable.PotionEffect.SARADOMIN_BREW, 15, 81, 1000);
+        addDefaultPotion(2434, "Prayer potion", Consumable.EffectType.PRAYER_BONUS, 7, 38, 100);
+        addDefaultPotion(10925, "Sanfew serum", Consumable.EffectType.PRAYER_BONUS, 4, 65, 1500);
+        addDefaultPotion(6685, "Saradomin brew", Consumable.EffectType.STAT_BOOST, 15, 81, 1000);
         
         // Restore potions
-        addDefaultPotion(2430, "Restore potion", Consumable.PotionEffect.STAT_RESTORE, 10, 22, 62);
-        addDefaultPotion(3024, "Super restore", Consumable.PotionEffect.STAT_RESTORE, 8, 63, 500);
+        addDefaultPotion(2430, "Restore potion", Consumable.EffectType.STAT_BOOST, 10, 22, 62);
+        addDefaultPotion(3024, "Super restore", Consumable.EffectType.STAT_BOOST, 8, 63, 500);
         
         // Energy and run potions
-        addDefaultPotion(3008, "Energy potion", Consumable.PotionEffect.ENERGY_RESTORE, 10, 26, 72);
-        addDefaultPotion(3010, "Super energy", Consumable.PotionEffect.ENERGY_RESTORE, 20, 52, 281);
-        addDefaultPotion(3012, "Stamina potion", Consumable.PotionEffect.STAMINA_BOOST, 20, 77, 2000);
+        addDefaultPotion(3008, "Energy potion", Consumable.EffectType.ENERGY_RESTORE, 10, 26, 72);
+        addDefaultPotion(3010, "Super energy", Consumable.EffectType.ENERGY_RESTORE, 20, 52, 281);
+        addDefaultPotion(3012, "Stamina potion", Consumable.EffectType.ENERGY_RESTORE, 20, 77, 2000);
         
         // Antipoison
-        addDefaultPotion(2446, "Antipoison", Consumable.PotionEffect.ANTIPOISON, 0, 37, 100);
-        addDefaultPotion(2448, "Super antipoison", Consumable.PotionEffect.ANTIPOISON, 0, 48, 200);
-        addDefaultPotion(2452, "Antidote+", Consumable.PotionEffect.ANTIPOISON, 0, 68, 1000);
-        addDefaultPotion(2454, "Antidote++", Consumable.PotionEffect.ANTIPOISON, 0, 79, 1500);
+        addDefaultPotion(2446, "Antipoison", Consumable.EffectType.POISON_IMMUNITY, 0, 37, 100);
+        addDefaultPotion(2448, "Super antipoison", Consumable.EffectType.POISON_IMMUNITY, 0, 48, 200);
+        addDefaultPotion(2452, "Antidote+", Consumable.EffectType.POISON_IMMUNITY, 0, 68, 1000);
+        addDefaultPotion(2454, "Antidote++", Consumable.EffectType.POISON_IMMUNITY, 0, 79, 1500);
         
         // Special potions
-        addDefaultPotion(6687, "Zamorak brew", Consumable.PotionEffect.ZAMORAK_BREW, 12, 78, 1000);
-        addDefaultPotion(12140, "Overload", Consumable.PotionEffect.OVERLOAD, 50, 96, 10000);
-        addDefaultPotion(12625, "Imbued heart", Consumable.PotionEffect.MAGIC_BOOST, 1, 75, 5000);
+        addDefaultPotion(6687, "Zamorak brew", Consumable.EffectType.STAT_BOOST, 12, 78, 1000);
+        addDefaultPotion(12140, "Overload", Consumable.EffectType.STAT_BOOST, 50, 96, 10000);
+        addDefaultPotion(12625, "Imbued heart", Consumable.EffectType.STAT_BOOST, 1, 75, 5000);
         
         // Barbarian herblore
-        addDefaultPotion(175, "Barbarian herblore", Consumable.PotionEffect.BARBARIAN_MIX, 6, 17, 50);
+        addDefaultPotion(175, "Barbarian herblore", Consumable.EffectType.OTHER, 6, 17, 50);
         
         logger.info(String.format("Loaded %d default consumables", consumablesById.size()));
     }
@@ -206,13 +188,13 @@ public class ConsumableRepository {
         }
         
         if (special) {
-            food.getEffects().add("Special healing properties");
+            food.getEffects().add(new Consumable.Effect("Special healing properties", Consumable.EffectType.OTHER, 0, 0));
         }
         
         consumablesById.put(id, food);
     }
     
-    private void addDefaultPotion(int id, String name, Consumable.PotionEffect effect, int boost, int levelReq, int value) {
+    private void addDefaultPotion(int id, String name, Consumable.EffectType effect, int boost, int levelReq, int value) {
         Consumable potion = new Consumable(id, name, Consumable.ConsumableType.POTION);
         potion.setValue(value);
         potion.setTradeable(true);
@@ -225,79 +207,77 @@ public class ConsumableRepository {
         
         // Set potion effects based on type
         switch (effect) {
-            case ATTACK_BOOST:
-                potion.getStatBoosts().put("attack", boost);
-                potion.getEffects().add("Boosts Attack level");
+            case STAT_BOOST:
+                // Handle different stat boosts based on potion name
+                if (name.toLowerCase().contains("attack")) {
+                    potion.getStatBoosts().put("attack", boost);
+                    potion.getEffects().add(new Consumable.Effect("Boosts Attack level", Consumable.EffectType.STAT_BOOST, 300, boost));
+                } else if (name.toLowerCase().contains("strength")) {
+                    potion.getStatBoosts().put("strength", boost);
+                    potion.getEffects().add(new Consumable.Effect("Boosts Strength level", Consumable.EffectType.STAT_BOOST, 300, boost));
+                } else if (name.toLowerCase().contains("defence")) {
+                    potion.getStatBoosts().put("defence", boost);
+                    potion.getEffects().add(new Consumable.Effect("Boosts Defence level", Consumable.EffectType.STAT_BOOST, 300, boost));
+                } else if (name.toLowerCase().contains("ranged")) {
+                    potion.getStatBoosts().put("ranged", boost);
+                    potion.getEffects().add(new Consumable.Effect("Boosts Ranged level", Consumable.EffectType.STAT_BOOST, 300, boost));
+                } else if (name.toLowerCase().contains("magic")) {
+                    potion.getStatBoosts().put("magic", boost);
+                    potion.getEffects().add(new Consumable.Effect("Boosts Magic level", Consumable.EffectType.STAT_BOOST, 300, boost));
+                } else if (name.toLowerCase().contains("combat")) {
+                    potion.getStatBoosts().put("attack", boost);
+                    potion.getStatBoosts().put("strength", boost);
+                    potion.getEffects().add(new Consumable.Effect("Boosts Attack and Strength levels", Consumable.EffectType.STAT_BOOST, 300, boost));
+                } else if (name.toLowerCase().contains("super combat")) {
+                    potion.getStatBoosts().put("attack", boost);
+                    potion.getStatBoosts().put("strength", boost);
+                    potion.getStatBoosts().put("defence", boost);
+                    potion.getEffects().add(new Consumable.Effect("Boosts Attack, Strength, and Defence levels", Consumable.EffectType.STAT_BOOST, 300, boost));
+                } else if (name.toLowerCase().contains("overload")) {
+                    potion.getStatBoosts().put("attack", boost / 10);
+                    potion.getStatBoosts().put("strength", boost / 10);
+                    potion.getStatBoosts().put("defence", boost / 10);
+                    potion.getStatBoosts().put("ranged", boost / 10);
+                    potion.getStatBoosts().put("magic", boost / 10);
+                    potion.getEffects().add(new Consumable.Effect("Massively boosts all combat stats", Consumable.EffectType.STAT_BOOST, 600, boost));
+                } else {
+                    potion.getEffects().add(new Consumable.Effect("Boosts stats", Consumable.EffectType.STAT_BOOST, 300, boost));
+                }
                 break;
-            case STRENGTH_BOOST:
-                potion.getStatBoosts().put("strength", boost);
-                potion.getEffects().add("Boosts Strength level");
-                break;
-            case DEFENCE_BOOST:
-                potion.getStatBoosts().put("defence", boost);
-                potion.getEffects().add("Boosts Defence level");
-                break;
-            case RANGED_BOOST:
-                potion.getStatBoosts().put("ranged", boost);
-                potion.getEffects().add("Boosts Ranged level");
-                break;
-            case MAGIC_BOOST:
-                potion.getStatBoosts().put("magic", boost);
-                potion.getEffects().add("Boosts Magic level");
-                break;
-            case COMBAT_BOOST:
-                potion.getStatBoosts().put("attack", boost);
-                potion.getStatBoosts().put("strength", boost);
-                potion.getEffects().add("Boosts Attack and Strength levels");
-                break;
-            case SUPER_COMBAT:
-                potion.getStatBoosts().put("attack", boost);
-                potion.getStatBoosts().put("strength", boost);
-                potion.getStatBoosts().put("defence", boost);
-                potion.getEffects().add("Boosts Attack, Strength, and Defence levels");
-                break;
-            case PRAYER_RESTORE:
+            case PRAYER_BONUS:
                 potion.getStatBoosts().put("prayer", boost);
-                potion.getEffects().add("Restores Prayer points");
-                break;
-            case STAT_RESTORE:
-                potion.getEffects().add("Restores lowered stats");
+                potion.getEffects().add(new Consumable.Effect("Restores Prayer points", Consumable.EffectType.PRAYER_BONUS, 0, boost));
                 break;
             case ENERGY_RESTORE:
-                potion.getEffects().add("Restores run energy");
+                if (name.toLowerCase().contains("stamina")) {
+                    potion.getEffects().add(new Consumable.Effect("Reduces run energy drain", Consumable.EffectType.ENERGY_RESTORE, 0, boost));
+                } else {
+                    potion.getEffects().add(new Consumable.Effect("Restores run energy", Consumable.EffectType.ENERGY_RESTORE, 0, boost));
+                }
                 break;
-            case STAMINA_BOOST:
-                potion.getEffects().add("Reduces run energy drain");
+            case POISON_IMMUNITY:
+                potion.getEffects().add(new Consumable.Effect("Cures and prevents poison", Consumable.EffectType.POISON_IMMUNITY, 600, 0));
                 break;
-            case ANTIPOISON:
-                potion.getEffects().add("Cures and prevents poison");
-                break;
-            case SARADOMIN_BREW:
-                potion.getStatBoosts().put("hitpoints", boost);
-                potion.getStatBoosts().put("defence", boost / 5);
-                potion.getStatReductions().put("attack", boost / 10);
-                potion.getStatReductions().put("strength", boost / 10);
-                potion.getStatReductions().put("magic", boost / 10);
-                potion.getStatReductions().put("ranged", boost / 10);
-                potion.getEffects().add("Heals and boosts Defence, reduces combat stats");
-                break;
-            case ZAMORAK_BREW:
-                potion.getStatBoosts().put("attack", boost / 5);
-                potion.getStatBoosts().put("strength", boost / 5);
-                potion.getStatReductions().put("defence", boost / 10);
-                potion.getStatReductions().put("hitpoints", boost / 10);
-                potion.getEffects().add("Boosts Attack and Strength, reduces Defence and HP");
-                break;
-            case OVERLOAD:
-                potion.getStatBoosts().put("attack", boost / 10);
-                potion.getStatBoosts().put("strength", boost / 10);
-                potion.getStatBoosts().put("defence", boost / 10);
-                potion.getStatBoosts().put("ranged", boost / 10);
-                potion.getStatBoosts().put("magic", boost / 10);
-                potion.getEffects().add("Massively boosts all combat stats");
-                break;
-            case BARBARIAN_MIX:
-                potion.getEffects().add("Barbarian herblore mix");
+            case OTHER:
+                if (name.toLowerCase().contains("saradomin brew")) {
+                    potion.getStatBoosts().put("hitpoints", boost);
+                    potion.getStatBoosts().put("defence", boost / 5);
+                    potion.getStatReductions().put("attack", boost / 10);
+                    potion.getStatReductions().put("strength", boost / 10);
+                    potion.getStatReductions().put("magic", boost / 10);
+                    potion.getStatReductions().put("ranged", boost / 10);
+                    potion.getEffects().add(new Consumable.Effect("Heals and boosts Defence, reduces combat stats", Consumable.EffectType.OTHER, 300, boost));
+                } else if (name.toLowerCase().contains("zamorak brew")) {
+                    potion.getStatBoosts().put("attack", boost / 5);
+                    potion.getStatBoosts().put("strength", boost / 5);
+                    potion.getStatReductions().put("defence", boost / 10);
+                    potion.getStatReductions().put("hitpoints", boost / 10);
+                    potion.getEffects().add(new Consumable.Effect("Boosts Attack and Strength, reduces Defence and HP", Consumable.EffectType.OTHER, 300, boost));
+                } else if (name.toLowerCase().contains("barbarian")) {
+                    potion.getEffects().add(new Consumable.Effect("Barbarian herblore mix", Consumable.EffectType.OTHER, 300, 0));
+                } else {
+                    potion.getEffects().add(new Consumable.Effect("Restores lowered stats", Consumable.EffectType.OTHER, 0, 0));
+                }
                 break;
         }
         
@@ -333,8 +313,8 @@ public class ConsumableRepository {
             }
             
             // Index by effects
-            for (String effect : consumable.getEffects()) {
-                String effectLower = effect.toLowerCase();
+            for (Consumable.Effect effect : consumable.getEffects()) {
+                String effectLower = effect.getName().toLowerCase();
                 consumablesByEffect.computeIfAbsent(effectLower, k -> new ArrayList<>()).add(consumable);
             }
             

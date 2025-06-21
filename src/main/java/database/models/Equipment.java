@@ -39,6 +39,14 @@ public class Equipment {
         this.bonuses = new CombatBonuses();
     }
     
+    public Equipment(int itemId, String name, EquipmentSlot slot) {
+        this();
+        this.itemId = itemId;
+        this.name = name;
+        this.slot = slot;
+        this.type = EquipmentType.TOOL; // Default type
+    }
+    
     public Equipment(int itemId, String name, EquipmentSlot slot, EquipmentType type) {
         this();
         this.itemId = itemId;
@@ -94,6 +102,29 @@ public class Equipment {
     public ArmorProperties getArmorProperties() { return armorProperties; }
     public void setArmorProperties(ArmorProperties armorProperties) { this.armorProperties = armorProperties; }
     
+    // Convenience methods for weapon and armor types
+    public void setWeaponType(WeaponType weaponType) {
+        if (weaponProperties == null) {
+            weaponProperties = new WeaponProperties();
+        }
+        weaponProperties.setWeaponType(weaponType);
+    }
+    
+    public WeaponType getWeaponType() {
+        return weaponProperties != null ? weaponProperties.getWeaponType() : WeaponType.UNKNOWN;
+    }
+    
+    public void setArmorType(ArmorType armorType) {
+        if (armorProperties == null) {
+            armorProperties = new ArmorProperties();
+        }
+        armorProperties.setArmorType(armorType);
+    }
+    
+    public ArmorType getArmorType() {
+        return armorProperties != null ? armorProperties.getArmorType() : ArmorType.UNKNOWN;
+    }
+    
     // Utility methods
     public boolean isWeapon() {
         return slot == EquipmentSlot.WEAPON || slot == EquipmentSlot.SHIELD;
@@ -111,6 +142,48 @@ public class Equipment {
     
     public boolean hasLevelRequirement(String skill) {
         return levelRequirements.containsKey(skill.toLowerCase());
+    }
+    
+    public boolean hasLevelRequirement(String skill, int level) {
+        return getLevelRequirement(skill) <= level;
+    }
+    
+    public boolean canEquip(Map<String, Integer> playerStats) {
+        for (Map.Entry<String, Integer> requirement : levelRequirements.entrySet()) {
+            String skill = requirement.getKey();
+            int requiredLevel = requirement.getValue();
+            int playerLevel = playerStats.getOrDefault(skill, 1);
+            if (playerLevel < requiredLevel) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    public boolean supportsCombatStyle(String combatStyle) {
+        if (weaponProperties == null) {
+            return false;
+        }
+        
+        WeaponType weaponType = weaponProperties.getWeaponType();
+        if (weaponType == null) {
+            return false;
+        }
+        
+        // Check if the weapon type supports the combat style
+        switch (combatStyle.toLowerCase()) {
+            case "melee":
+            case "attack":
+            case "strength":
+            case "defence":
+                return weaponType.isMelee();
+            case "ranged":
+                return weaponType.isRanged();
+            case "magic":
+                return weaponType.isMagic();
+            default:
+                return false;
+        }
     }
     
     public int getLevelRequirement(String skill) {
@@ -226,6 +299,7 @@ public class Equipment {
     }
     
     public static class WeaponProperties {
+        private WeaponType weaponType;
         private int attackSpeed;
         private String[] attackStyles;
         private boolean hasSpecialAttack;
@@ -246,9 +320,13 @@ public class Equipment {
         
         public String getWeaponCategory() { return weaponCategory; }
         public void setWeaponCategory(String weaponCategory) { this.weaponCategory = weaponCategory; }
+        
+        public WeaponType getWeaponType() { return weaponType; }
+        public void setWeaponType(WeaponType weaponType) { this.weaponType = weaponType; }
     }
     
     public static class ArmorProperties {
+        private ArmorType armorType;
         private String armorSet; // "iron", "steel", "rune", etc.
         private int defenceLevel;
         private boolean fullHelm;
@@ -265,5 +343,8 @@ public class Equipment {
         
         public boolean isPlatebody() { return platebody; }
         public void setPlatebody(boolean platebody) { this.platebody = platebody; }
+        
+        public ArmorType getArmorType() { return armorType; }
+        public void setArmorType(ArmorType armorType) { this.armorType = armorType; }
     }
 }

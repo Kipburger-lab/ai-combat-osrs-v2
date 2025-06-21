@@ -283,13 +283,28 @@ public class Consumable {
         return isFood() && healAmount >= 10; // Decent healing for combat
     }
     
-    public boolean isCombatPotion() {
-        return isPotion() && (combatPotion || !statBoosts.isEmpty());
-    }
-    
     public double getHealingEfficiency() {
         if (!isFood() || value <= 0) return 0.0;
         return (double) healAmount / value;
+    }
+    
+    /**
+     * Get the skill requirements for this consumable
+     * @return Map of skill name to required level
+     */
+    public java.util.Map<String, Integer> getRequirements() {
+        if (levelRequirements == null) {
+            levelRequirements = new java.util.HashMap<>();
+        }
+        return levelRequirements;
+    }
+    
+    /**
+     * Set the skill requirements for this consumable
+     * @param requirements Map of skill name to required level
+     */
+    public void setRequirements(java.util.Map<String, Integer> requirements) {
+        this.levelRequirements = requirements;
     }
     
     @Override

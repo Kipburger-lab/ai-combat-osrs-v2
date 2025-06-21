@@ -1,0 +1,68 @@
+[
+  {
+    "locationId": 1,
+    "name": "Lumbridge Castle",
+    "description": "Bank on the top floor of Lumbridge Castle.",
+    "region": "Lumbridge",
+    "x": 3208,
+    "y": 3220,
+    "z": 2,
+    "bankType": "BANK_BOOTH",
+    "members": false,
+    "safeArea": true,
+    "nearbyTeleports": ["Lumbridge Teleport", "Home Teleport"]
+  },
+  {
+    "locationId": 2,
+    "name": "Varrock West Bank",
+    "description": "Bank in west Varrock.",
+    "region": "Varrock",
+    "x": 3185,
+    "y": 3436,
+    "z": 0,
+    "bankType": "BANK_BOOTH",
+    "members": false,
+    "safeArea": true,
+    "nearbyTeleports": ["Varrock Teleport"]
+  },
+  {
+    "locationId": 3,
+    "name": "Varrock East Bank",
+    "description": "Bank in east Varrock.",
+    "region": "Varrock",
+    "x": 3253,
+    "y": 3420,
+    "z": 0,
+    "bankType": "BANK_BOOTH",
+    "members": false,
+    "safeArea": true,
+    "nearbyTeleports": ["Varrock Teleport"]
+  },
+  {
+    "locationId": 4,
+    "name": "Falador West Bank",
+    "description": "Bank in west Falador.",
+    "region": "Falador",
+    "x": 2946,
+    "y": 3368,
+    "z": 0,
+    "bankType": "BANK_BOOTH",
+    "members": false,
+    "safeArea": true,
+    "nearbyTeleports": ["Falador Teleport"]
+  },
+  {
+    "locationId": 5,
+    "name": "Falador East Bank",
+    "description": "Bank in east Falador.",
+    "region": "Falador",
+    "x": 3013,
+    "y": 3355,
+    "z": 0,
+    "bankType": "BANK_BOOTH",
+    "members": false,
+    "safeArea": true,
+    "nearbyTeleports": ["Falador Teleport"]
+  }
+]
+ 

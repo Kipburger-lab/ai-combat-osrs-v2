@@ -32,13 +32,29 @@ public class DataLoader {
      */
     public static <T> List<T> loadList(String filePath, TypeToken<List<T>> typeToken) {
         try {
-            File file = new File(filePath);
-            if (!file.exists()) {
-                Logger.warn("Data file not found: " + filePath + ", returning empty list");
-                return List.of();
-            }
+            // Try to load from classpath resources first
+            InputStream inputStream = DataLoader.class.getClassLoader().getResourceAsStream(filePath);
+            String jsonContent;
             
-            String jsonContent = Files.readString(Paths.get(filePath), StandardCharsets.UTF_8);
+            if (inputStream != null) {
+                // Load from classpath resources
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                    StringBuilder content = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        content.append(line).append("\n");
+                    }
+                    jsonContent = content.toString();
+                }
+            } else {
+                // Fallback to file system
+                File file = new File(filePath);
+                if (!file.exists()) {
+                    Logger.warn("Data file not found: " + filePath + ", returning empty list");
+                    return List.of();
+                }
+                jsonContent = Files.readString(Paths.get(filePath), StandardCharsets.UTF_8);
+            }
             
             if (jsonContent.trim().isEmpty()) {
                 Logger.warn("Data file is empty: " + filePath + ", returning empty list");
@@ -78,13 +94,29 @@ public class DataLoader {
      */
     public static <T> T loadObject(String filePath, Class<T> clazz) {
         try {
-            File file = new File(filePath);
-            if (!file.exists()) {
-                Logger.warn("Data file not found: " + filePath);
-                return null;
-            }
+            // Try to load from classpath resources first
+            InputStream inputStream = DataLoader.class.getClassLoader().getResourceAsStream(filePath);
+            String jsonContent;
             
-            String jsonContent = Files.readString(Paths.get(filePath), StandardCharsets.UTF_8);
+            if (inputStream != null) {
+                // Load from classpath resources
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                    StringBuilder content = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        content.append(line).append("\n");
+                    }
+                    jsonContent = content.toString();
+                }
+            } else {
+                // Fallback to file system
+                File file = new File(filePath);
+                if (!file.exists()) {
+                    Logger.warn("Data file not found: " + filePath);
+                    return null;
+                }
+                jsonContent = Files.readString(Paths.get(filePath), StandardCharsets.UTF_8);
+            }
             
             if (jsonContent.trim().isEmpty()) {
                 Logger.warn("Data file is empty: " + filePath);
@@ -262,6 +294,60 @@ public class DataLoader {
         } catch (IOException e) {
             Logger.error("Error creating empty file " + filePath + ": " + e.getMessage());
             return false;
+        }
+    }
+    
+    /**
+     * Load JSON data from a file (alias for loadList method)
+     * This method is used by repository classes for consistency
+     * @param filePath Path to the JSON file
+     * @param typeToken TypeToken for the list type
+     * @param <T> Type of objects in the list
+     * @return List of loaded objects, empty list if file doesn't exist or parsing fails
+     */
+    public static <T> List<T> loadJsonData(String filePath, TypeToken<List<T>> typeToken) {
+        return loadList(filePath, typeToken);
+    }
+    
+    /**
+     * Load data from a file (generic method for repository compatibility)
+     * @param filename Name of the file to load
+     * @return Raw string content of the file, empty string if error occurs
+     */
+    public static String loadData(String filename) {
+        try {
+            // Try to load from classpath resources first
+            InputStream inputStream = DataLoader.class.getClassLoader().getResourceAsStream(filename);
+            String content;
+            
+            if (inputStream != null) {
+                // Load from classpath resources
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                    StringBuilder contentBuilder = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        contentBuilder.append(line).append("\n");
+                    }
+                    content = contentBuilder.toString();
+                }
+            } else {
+                // Fallback to file system
+                File file = new File(filename);
+                if (!file.exists()) {
+                    Logger.warn("Data file not found: " + filename);
+                    return "";
+                }
+                content = Files.readString(Paths.get(filename), StandardCharsets.UTF_8);
+            }
+            Logger.log("Successfully loaded data from " + filename);
+            return content;
+            
+        } catch (IOException e) {
+            Logger.error("IO error reading file " + filename + ": " + e.getMessage());
+            return "";
+        } catch (Exception e) {
+            Logger.error("Unexpected error loading file " + filename + ": " + e.getMessage());
+            return "";
         }
     }
 }

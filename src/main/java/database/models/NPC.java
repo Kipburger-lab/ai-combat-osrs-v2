@@ -143,6 +143,17 @@ public class NPC {
         return locations.stream().anyMatch(loc -> loc.getRegion().equalsIgnoreCase(regionName));
     }
     
+    /**
+     * Get the primary location name for this NPC
+     * @return the name of the first location, or null if no locations exist
+     */
+    public String getLocation() {
+        if (locations == null || locations.isEmpty()) {
+            return null;
+        }
+        return locations.get(0).getName();
+    }
+    
     public void addLocation(Location location) {
         if (location != null && !locations.contains(location)) {
             locations.add(location);

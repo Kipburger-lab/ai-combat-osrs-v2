@@ -42,7 +42,7 @@ import gui.CombatGUI;
     author = "TraeAI",
     description = "Advanced AI Combat Script with GUI and Banking",
     category = Category.COMBAT,
-    version = 2.0,
+    version = 1.2,
     name = "AI Combat OSRS v2"
 )
 public class AICombatScript extends AbstractScript {
@@ -75,27 +75,6 @@ public class AICombatScript extends AbstractScript {
             SwingUtilities.invokeLater(() -> {
                 try {
                     gui = new CombatGUI(this); // Pass script reference to GUI
-                    
-                    // Force window to be independent and visible
-                    gui.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-                    gui.setType(Window.Type.NORMAL);
-                    gui.setAutoRequestFocus(true);
-                    gui.setFocusableWindowState(true);
-                    gui.setAlwaysOnTop(true);
-                    
-                    // Make visible and bring to front
-                    gui.setVisible(true);
-                    gui.toFront();
-                    gui.requestFocus();
-                    gui.repaint();
-                    
-                    // Reset always on top after a delay
-                    Timer resetTimer = new Timer(2000, e -> {
-                        gui.setAlwaysOnTop(false);
-                        ((Timer) e.getSource()).stop();
-                    });
-                    resetTimer.start();
-                    
                     gui.logMessage("AI Combat Script v2.0 initialized");
                     Logger.log("[AICombatScript] GUI window created and displayed with script reference");
                     

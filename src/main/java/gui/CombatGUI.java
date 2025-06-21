@@ -6,11 +6,17 @@ import org.dreambot.api.utilities.Logger;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import javax.swing.BorderFactory;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.FileReader;
 
 import scripts.AICombatScript;
 
@@ -18,6 +24,11 @@ import combat.*;
 import economy.BankManager;
 import tasks.TaskManager;
 import antiban.AntiBanManager;
+import database.repositories.*;
+import database.models.*;
+import database.models.Equipment.EquipmentSlot;
+import database.models.WeaponType;
+import database.models.ArmorType;
 
 /**
  * Advanced Combat GUI for AI Combat OSRS
@@ -35,14 +46,15 @@ public class CombatGUI extends JFrame {
     
     // Combat Configuration
     private JComboBox<String> combatStyleCombo, targetPriorityCombo;
+    private JComboBox<String> npcComboBox, locationComboBox, lootComboBox;
     private JCheckBox enableSpecialAttack, autoLoot, safeSpotting, prayerFlicking;
     private JSpinner minSpecEnergySpinner, maxSpecEnergySpinner, foodThresholdSpinner;
-    private JTextField targetAreaField, lootFilterField;
+    // Removed unused lootFilterField - using lootComboBox instead
     
     // Banking Configuration
     private JCheckBox enableBanking, depositJunk, withdrawFood, withdrawPotions;
     private JSpinner minFoodSpinner, maxFoodSpinner, minPotionSpinner;
-    private JTextField bankLocationField, foodTypeField, potionTypeField;
+    private JComboBox<String> bankLocationCombo, foodComboBox, potionComboBox;
     
     // Weapon Management
     private JCheckBox autoWeaponSwitch, ammunitionManagement;
@@ -63,6 +75,12 @@ public class CombatGUI extends JFrame {
     // Control Buttons
     private JButton startButton, stopButton, pauseButton, resetStatsButton;
     private JButton saveConfigButton, loadConfigButton, exportLogsButton;
+    private JComboBox<String> profileComboBox;
+    private JTextField profileNameField;
+    
+    // Gear and Inventory Loadout Components (planned for future implementation)
+    // private JComboBox<String> gearProfileComboBox;
+    // private JComboBox<String> inventoryProfileComboBox;
     
     // Configuration Storage
     private final Map<String, Object> configuration = new ConcurrentHashMap<>();
@@ -75,12 +93,19 @@ public class CombatGUI extends JFrame {
     private TaskManager taskManager;
     private AntiBanManager antiBanManager;
     
+    // Database Repositories
+    private NPCRepository npcRepository;
+    private EquipmentRepository equipmentRepository;
+    private ConsumableRepository consumableRepository;
+    private BankLocationRepository locationRepository;
+    
     // GUI State
     private boolean isScriptRunning = false;
     private Timer statisticsUpdateTimer;
     private AICombatScript scriptInstance;
     
     public CombatGUI() {
+        initializeDatabaseRepositories();
         initializeGUI();
         setupEventHandlers();
         loadDefaultConfiguration();
@@ -90,11 +115,51 @@ public class CombatGUI extends JFrame {
     
     public CombatGUI(AICombatScript script) {
         this.scriptInstance = script;
+        initializeDatabaseRepositories();
         initializeGUI();
         setupEventHandlers();
         loadDefaultConfiguration();
         startStatisticsUpdater();
         Logger.log("[CombatGUI] Advanced GUI initialized successfully with script reference");
+    }
+    
+    /**
+     * Initialize database repositories
+     */
+    private void initializeDatabaseRepositories() {
+        try {
+            Logger.log("[CombatGUI] Initializing database repositories...");
+            
+            this.npcRepository = new NPCRepository();
+            this.npcRepository.initialize();
+            Logger.log("[CombatGUI] NPC repository initialized with " + npcRepository.getCount() + " NPCs");
+            
+            this.equipmentRepository = new EquipmentRepository();
+            this.equipmentRepository.initialize();
+            Logger.log("[CombatGUI] Equipment repository initialized with " + equipmentRepository.getCount() + " items");
+            
+            this.consumableRepository = new ConsumableRepository();
+            this.consumableRepository.initialize();
+            Logger.log("[CombatGUI] Consumable repository initialized with " + consumableRepository.getCount() + " items");
+            
+            this.locationRepository = new BankLocationRepository();
+            this.locationRepository.initialize();
+            Logger.log("[CombatGUI] Bank location repository initialized with " + locationRepository.getCount() + " locations");
+            
+            Logger.log("[CombatGUI] All database repositories initialized successfully");
+        } catch (Exception e) {
+            Logger.error("[CombatGUI] Failed to initialize database repositories: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Show error to user
+            SwingUtilities.invokeLater(() -> {
+                JOptionPane.showMessageDialog(this, 
+                    "Failed to initialize database repositories. Some dropdown lists may be empty.\n" +
+                    "Error: " + e.getMessage(), 
+                    "Database Initialization Error", 
+                    JOptionPane.WARNING_MESSAGE);
+            });
+        }
     }
     
     /**
@@ -108,52 +173,71 @@ public class CombatGUI extends JFrame {
      * Initialize the main GUI components
      */
     private void initializeGUI() {
-        setTitle("AI Combat OSRS - Advanced Combat Script v2.0");
-        setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-        setSize(800, 600);
-        setLocationRelativeTo(null);
-        setResizable(true);
-        setAlwaysOnTop(false);
-        setAutoRequestFocus(true);
-        
-        // Ensure the window appears as a separate window
-        setExtendedState(JFrame.NORMAL);
-        
-        // Set window position to center of screen
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        int x = (screenSize.width - getWidth()) / 2;
-        int y = (screenSize.height - getHeight()) / 2;
-        setLocation(x, y);
-        
-        // Skip look and feel setting to avoid conflicts with DreamBot's UI framework
-        // Using default Swing look and feel for compatibility
-        
-        // Create main tabbed pane
-        mainTabbedPane = new JTabbedPane(JTabbedPane.TOP);
-        
-        // Initialize all panels
-        initializeCombatPanel();
-        initializeBankingPanel();
-        initializeWeaponPanel();
-        initializeAntiBanPanel();
-        initializeStatisticsPanel();
-        
-        // Add panels to tabbed pane
-        mainTabbedPane.addTab("⚔️ Combat", combatPanel);
-        mainTabbedPane.addTab("🏦 Banking", bankingPanel);
-        mainTabbedPane.addTab("🗡️ Weapons", weaponPanel);
-        mainTabbedPane.addTab("🛡️ Anti-Ban", antiBanPanel);
-        mainTabbedPane.addTab("📊 Statistics", statisticsPanel);
-        
-        // Create control panel
-        JPanel controlPanel = createControlPanel();
-        
-        // Layout
-        setLayout(new BorderLayout());
-        add(mainTabbedPane, BorderLayout.CENTER);
-        add(controlPanel, BorderLayout.SOUTH);
-        
-        Logger.log("[CombatGUI] Main GUI components initialized");
+        try {
+            setTitle("AI Combat OSRS - Advanced Combat Script v2.0");
+            setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+            setSize(800, 600);
+            setResizable(true);
+            
+            // Force window to be visible and on top initially
+            setAlwaysOnTop(true);
+            setAutoRequestFocus(true);
+            setFocusableWindowState(true);
+            
+            // Ensure the window appears as a separate window
+            setExtendedState(JFrame.NORMAL);
+            setType(Window.Type.NORMAL);
+            
+            // Set window position to center of screen
+            Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+            int x = (screenSize.width - getWidth()) / 2;
+            int y = (screenSize.height - getHeight()) / 2;
+            setLocation(x, y);
+            
+            // Create main tabbed pane
+            mainTabbedPane = new JTabbedPane(JTabbedPane.TOP);
+            
+            // Initialize all panels
+            initializeCombatPanel();
+            initializeBankingPanel();
+            initializeWeaponPanel();
+            initializeAntiBanPanel();
+            initializeStatisticsPanel();
+            
+            // Add panels to tabbed pane
+            mainTabbedPane.addTab("Combat", combatPanel);
+            mainTabbedPane.addTab("Banking", bankingPanel);
+            mainTabbedPane.addTab("Weapons", weaponPanel);
+            mainTabbedPane.addTab("Anti-Ban", antiBanPanel);
+            mainTabbedPane.addTab("Statistics", statisticsPanel);
+            
+            // Create control panel
+            JPanel controlPanel = createControlPanel();
+            
+            // Layout
+            setLayout(new BorderLayout());
+            add(mainTabbedPane, BorderLayout.CENTER);
+            add(controlPanel, BorderLayout.SOUTH);
+            
+            // Force visibility
+            pack();
+            setVisible(true);
+            toFront();
+            requestFocus();
+            
+            // Reset always on top after 3 seconds
+            Timer resetTimer = new Timer(3000, e -> {
+                setAlwaysOnTop(false);
+                ((Timer) e.getSource()).stop();
+            });
+            resetTimer.start();
+            
+            Logger.log("[CombatGUI] Main GUI components initialized and made visible");
+            
+        } catch (Exception e) {
+            Logger.error("[CombatGUI] Error initializing GUI: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
     
     /**
@@ -215,13 +299,36 @@ public class CombatGUI extends JFrame {
         
         // Target Configuration Section
         JPanel targetConfigPanel = createTitledPanel("Target Configuration");
-        targetAreaField = new JTextField("Lumbridge Cows", 15);
-        lootFilterField = new JTextField("Bones, Hide, Meat", 15);
         
-        targetConfigPanel.add(new JLabel("Target Area:"));
-        targetConfigPanel.add(targetAreaField);
-        targetConfigPanel.add(new JLabel("Loot Filter:"));
-        targetConfigPanel.add(lootFilterField);
+        // NPC Selection with database integration
+        JPanel npcSelectionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        npcSelectionPanel.add(new JLabel("Target NPC:"));
+        
+        // Create searchable NPC combo box
+        npcComboBox = createSearchableNPCComboBox();
+        npcComboBox.addActionListener(e -> {
+            String selectedNPC = (String) npcComboBox.getSelectedItem();
+            updateNPCLocationComboBox(selectedNPC);
+        });
+        npcSelectionPanel.add(npcComboBox);
+        
+        // NPC location selection with database integration
+        JPanel locationPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        locationPanel.add(new JLabel("Location:"));
+        locationComboBox = createSearchableNPCLocationComboBox();
+        locationPanel.add(locationComboBox);
+        
+        // Loot filter with consumable database integration
+        JPanel lootPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        lootPanel.add(new JLabel("Loot Filter:"));
+        
+        lootComboBox = createSearchableLootComboBox();
+        lootPanel.add(lootComboBox);
+        
+        targetConfigPanel.setLayout(new BoxLayout(targetConfigPanel, BoxLayout.Y_AXIS));
+        targetConfigPanel.add(npcSelectionPanel);
+        targetConfigPanel.add(locationPanel);
+        targetConfigPanel.add(lootPanel);
         
         // Add all sections to combat panel
         gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
@@ -270,16 +377,57 @@ public class CombatGUI extends JFrame {
         
         // Bank Configuration Section
         JPanel bankConfigPanel = createTitledPanel("Bank Configuration");
-        bankLocationField = new JTextField("Lumbridge", 15);
-        foodTypeField = new JTextField("Lobster", 15);
-        potionTypeField = new JTextField("Combat potion", 15);
         
-        bankConfigPanel.add(new JLabel("Bank Location:"));
-        bankConfigPanel.add(bankLocationField);
-        bankConfigPanel.add(new JLabel("Food Type:"));
-        bankConfigPanel.add(foodTypeField);
-        bankConfigPanel.add(new JLabel("Potion Type:"));
-        bankConfigPanel.add(potionTypeField);
+        // Bank location selection
+        JPanel bankLocationPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        bankLocationPanel.add(new JLabel("Bank Location:"));
+        bankLocationCombo = createSearchableLocationComboBox();
+        bankLocationPanel.add(bankLocationCombo);
+        
+        // Food type selection with database integration
+        JPanel foodPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        foodPanel.add(new JLabel("Food Type:"));
+        foodComboBox = createSearchableFoodComboBox();
+        foodPanel.add(foodComboBox);
+        
+        // Potion type selection with database integration
+        JPanel potionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        potionPanel.add(new JLabel("Potion Type:"));
+        potionComboBox = createSearchablePotionComboBox();
+        potionPanel.add(potionComboBox);
+        
+        // Inventory Setup Section
+        JPanel inventorySetupPanel = createTitledPanel("Inventory Setup");
+        inventorySetupPanel.setLayout(new BorderLayout());
+        
+        // Left side - fetch button only
+        JPanel inventoryControlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton fetchInventoryButton = new JButton("Fetch Inventory");
+        
+        inventoryControlPanel.add(fetchInventoryButton);
+        
+        // Right side - current inventory list
+        JPanel currentInventoryPanel = new JPanel();
+        currentInventoryPanel.setLayout(new BoxLayout(currentInventoryPanel, BoxLayout.Y_AXIS));
+        currentInventoryPanel.setBorder(BorderFactory.createTitledBorder("Current Inventory"));
+        currentInventoryPanel.setPreferredSize(new Dimension(200, 100));
+        
+        JScrollPane inventoryScrollPane = new JScrollPane(currentInventoryPanel);
+        inventoryScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        inventoryScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        
+        fetchInventoryButton.addActionListener(e -> {
+            fetchCurrentInventory(currentInventoryPanel);
+        });
+        
+        inventorySetupPanel.add(inventoryControlPanel, BorderLayout.WEST);
+        inventorySetupPanel.add(inventoryScrollPane, BorderLayout.EAST);
+        
+        bankConfigPanel.setLayout(new BoxLayout(bankConfigPanel, BoxLayout.Y_AXIS));
+        bankConfigPanel.add(bankLocationPanel);
+        bankConfigPanel.add(foodPanel);
+        bankConfigPanel.add(potionPanel);
+        bankConfigPanel.add(inventorySetupPanel);
         
         // Add all sections to banking panel
         gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
@@ -316,73 +464,108 @@ public class CombatGUI extends JFrame {
         
         // Weapon Selection Section
         JPanel weaponSelectionPanel = createTitledPanel("Weapon Selection");
-        
-        // Melee weapons (organized by tier)
-        String[] meleeWeapons = {"Bronze scimitar", "Iron scimitar", "Steel scimitar", "Mithril scimitar", 
-                                "Adamant scimitar", "Rune scimitar", "Dragon scimitar", "Abyssal whip", 
-                                "Dragon dagger", "Rune dagger", "Dragon longsword"};
-        
-        // Ranged weapons
-        String[] rangedWeapons = {"Shortbow", "Oak shortbow", "Willow shortbow", "Maple shortbow", 
-                                 "Yew shortbow", "Magic shortbow", "Rune crossbow", "Dragon crossbow"};
-        
-        // Magic weapons
-        String[] magicWeapons = {"Staff of air", "Staff of water", "Staff of earth", "Staff of fire", 
-                                "Mystic air staff", "Mystic water staff", "Mystic earth staff", "Mystic fire staff"};
-        
-        primaryWeaponCombo = new JComboBox<>(meleeWeapons);
-        secondaryWeaponCombo = new JComboBox<>(new String[]{"None"});
+        weaponSelectionPanel.setLayout(new GridBagLayout());
+        GridBagConstraints weaponGbc = new GridBagConstraints();
+        weaponGbc.insets = new Insets(2, 2, 2, 2);
+        weaponGbc.anchor = GridBagConstraints.WEST;
         
         // Weapon type selector
         JComboBox<String> weaponTypeCombo = new JComboBox<>(new String[]{"Melee", "Ranged", "Magic"});
+        
+        // Create database-driven weapon combo boxes
+        primaryWeaponCombo = createSearchableWeaponComboBox(WeaponType.SWORD);
+        secondaryWeaponCombo = createSearchableWeaponComboBox(WeaponType.SWORD);
+        
         weaponTypeCombo.addActionListener(e -> {
             String selectedType = (String) weaponTypeCombo.getSelectedItem();
-            primaryWeaponCombo.removeAllItems();
-            
-            String[] weapons;
+            WeaponType weaponType;
             switch (selectedType) {
                 case "Ranged":
-                    weapons = rangedWeapons;
+                    weaponType = WeaponType.SHORTBOW;
                     break;
                 case "Magic":
-                    weapons = magicWeapons;
+                    weaponType = WeaponType.STAFF;
                     break;
                 default:
-                    weapons = meleeWeapons;
+                    weaponType = WeaponType.SWORD;
                     break;
             }
-            
-            for (String weapon : weapons) {
-                primaryWeaponCombo.addItem(weapon);
-            }
+            updateWeaponComboBoxes(primaryWeaponCombo, weaponType);
+            updateWeaponComboBoxes(secondaryWeaponCombo, weaponType);
         });
         
-        weaponSelectionPanel.add(new JLabel("Weapon Type:"));
-        weaponSelectionPanel.add(weaponTypeCombo);
-        weaponSelectionPanel.add(new JLabel("Primary Weapon:"));
-        weaponSelectionPanel.add(primaryWeaponCombo);
-        weaponSelectionPanel.add(new JLabel("Secondary Weapon:"));
-        weaponSelectionPanel.add(secondaryWeaponCombo);
+        weaponGbc.gridx = 0; weaponGbc.gridy = 0;
+        weaponSelectionPanel.add(new JLabel("Type:"), weaponGbc);
+        weaponGbc.gridx = 1;
+        weaponSelectionPanel.add(weaponTypeCombo, weaponGbc);
+        
+        weaponGbc.gridx = 0; weaponGbc.gridy = 1;
+        weaponSelectionPanel.add(new JLabel("Primary:"), weaponGbc);
+        weaponGbc.gridx = 1;
+        weaponSelectionPanel.add(primaryWeaponCombo, weaponGbc);
+        
+        weaponGbc.gridx = 0; weaponGbc.gridy = 2;
+        weaponSelectionPanel.add(new JLabel("Secondary:"), weaponGbc);
+        weaponGbc.gridx = 1;
+        weaponSelectionPanel.add(secondaryWeaponCombo, weaponGbc);
         
         // Weapon Strategy Section
         JPanel weaponStrategyPanel = createTitledPanel("Combat Strategy");
+        weaponStrategyPanel.setLayout(new GridBagLayout());
+        GridBagConstraints strategyGbc = new GridBagConstraints();
+        strategyGbc.insets = new Insets(2, 2, 2, 2);
+        strategyGbc.anchor = GridBagConstraints.WEST;
+        
         String[] strategies = {"Aggressive (Max DPS)", "Balanced (Mixed)", "Defensive (Safe)", "Adaptive (Auto)"};
         JComboBox<String> strategyCombo = new JComboBox<>(strategies);
         
         JCheckBox autoUpgrade = new JCheckBox("Auto Upgrade Weapons (Coming Soon)", false);
         autoUpgrade.setEnabled(false);
         
-        weaponStrategyPanel.add(new JLabel("Combat Strategy:"));
-        weaponStrategyPanel.add(strategyCombo);
-        weaponStrategyPanel.add(autoUpgrade);
+        strategyGbc.gridx = 0; strategyGbc.gridy = 0;
+        weaponStrategyPanel.add(new JLabel("Strategy:"), strategyGbc);
+        strategyGbc.gridx = 1;
+        weaponStrategyPanel.add(strategyCombo, strategyGbc);
         
-        // Add all sections to weapon panel
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        strategyGbc.gridx = 0; strategyGbc.gridy = 1; strategyGbc.gridwidth = 2;
+        weaponStrategyPanel.add(autoUpgrade, strategyGbc);
+        
+        // Gear Loadout Section
+        JPanel gearLoadoutPanel = createTitledPanel("Gear Loadout");
+        gearLoadoutPanel.setLayout(new BorderLayout());
+        
+        // Left side - fetch button only
+        JPanel gearControlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton fetchGearButton = new JButton("Fetch Gear");
+        
+        gearControlPanel.add(fetchGearButton);
+        
+        // Right side - current gear list
+        JPanel currentGearPanel = new JPanel();
+        currentGearPanel.setLayout(new BoxLayout(currentGearPanel, BoxLayout.Y_AXIS));
+        currentGearPanel.setBorder(BorderFactory.createTitledBorder("Current Gear"));
+        currentGearPanel.setPreferredSize(new Dimension(200, 100));
+        
+        JScrollPane gearScrollPane = new JScrollPane(currentGearPanel);
+        gearScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        gearScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        
+        fetchGearButton.addActionListener(e -> {
+            fetchCurrentGear(currentGearPanel);
+        });
+        
+        gearLoadoutPanel.add(gearControlPanel, BorderLayout.WEST);
+        gearLoadoutPanel.add(gearScrollPane, BorderLayout.EAST);
+        
+        // Add all sections to weapon panel with compact layout
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         weaponPanel.add(weaponOptionsPanel, gbc);
         gbc.gridy = 1;
         weaponPanel.add(weaponSelectionPanel, gbc);
         gbc.gridy = 2;
         weaponPanel.add(weaponStrategyPanel, gbc);
+        gbc.gridy = 3;
+        weaponPanel.add(gearLoadoutPanel, gbc);
     }
     
     /**
@@ -496,9 +679,18 @@ public class CombatGUI extends JFrame {
         stopButton = new JButton("Stop Script");
         pauseButton = new JButton("Pause Script");
         resetStatsButton = new JButton("Reset Stats");
-        saveConfigButton = new JButton("Save Config");
-        loadConfigButton = new JButton("Load Config");
+        saveConfigButton = new JButton("Save Profile");
+        loadConfigButton = new JButton("Load Profile");
         exportLogsButton = new JButton("Export Logs");
+        
+        // Profile management components
+        profileNameField = new JTextField(15);
+        profileNameField.setToolTipText("Enter profile name to save");
+        profileComboBox = new JComboBox<>();
+        updateProfileList();
+        
+        JButton deleteProfileButton = new JButton("Delete");
+        deleteProfileButton.addActionListener(e -> deleteProfile((String) profileComboBox.getSelectedItem()));
         
         // Style buttons
         startButton.setBackground(new Color(76, 175, 80));
@@ -516,8 +708,14 @@ public class CombatGUI extends JFrame {
         controlPanel.add(pauseButton);
         controlPanel.add(new JSeparator(SwingConstants.VERTICAL));
         controlPanel.add(resetStatsButton);
+        controlPanel.add(new JSeparator(SwingConstants.VERTICAL));
+        controlPanel.add(new JLabel("Profile:"));
+        controlPanel.add(profileNameField);
         controlPanel.add(saveConfigButton);
+        controlPanel.add(profileComboBox);
         controlPanel.add(loadConfigButton);
+        controlPanel.add(deleteProfileButton);
+        controlPanel.add(new JSeparator(SwingConstants.VERTICAL));
         controlPanel.add(exportLogsButton);
         
         return controlPanel;
@@ -569,10 +767,21 @@ public class CombatGUI extends JFrame {
         combatStyleCombo.setSelectedItem("Auto-Switch");
         targetPriorityCombo.setSelectedItem("Closest");
         enableSpecialAttack.setSelected(true);
-        autoLoot.setSelected(true);
+        // autoLoot.setSelected(true); // Removed - should be unchecked by default
         enableBanking.setSelected(true);
         autoWeaponSwitch.setSelected(true);
         enableAntiBan.setSelected(true);
+        
+        // Set default selections for new combo boxes
+        if (npcComboBox != null && npcComboBox.getItemCount() > 0) {
+            npcComboBox.setSelectedIndex(0);
+        }
+        if (locationComboBox != null && locationComboBox.getItemCount() > 0) {
+            locationComboBox.setSelectedIndex(0);
+        }
+        if (lootComboBox != null && lootComboBox.getItemCount() > 0) {
+            lootComboBox.setSelectedIndex(0);
+        }
         
         updateConfiguration();
         Logger.log("[CombatGUI] Default configuration loaded");
@@ -622,20 +831,26 @@ public class CombatGUI extends JFrame {
      * Validate configuration before starting script
      */
     private boolean validateConfiguration() {
-        // Validate target area
-        if (targetAreaField.getText().trim().isEmpty()) {
-            showError("Target area cannot be empty");
+        // Validate target NPC selection
+        if (npcComboBox.getSelectedItem() == null || npcComboBox.getSelectedItem().toString().trim().isEmpty()) {
+            showError("Target NPC must be selected");
+            return false;
+        }
+        
+        // Validate location selection
+        if (locationComboBox.getSelectedItem() == null || locationComboBox.getSelectedItem().toString().trim().isEmpty()) {
+            showError("Location must be selected");
             return false;
         }
         
         // Validate banking configuration
-        if (enableBanking.isSelected() && bankLocationField.getText().trim().isEmpty()) {
+        if (enableBanking.isSelected() && (bankLocationCombo.getSelectedItem() == null || bankLocationCombo.getSelectedItem().toString().trim().isEmpty())) {
             showError("Bank location cannot be empty when banking is enabled");
             return false;
         }
         
         // Validate food configuration
-        if (withdrawFood.isSelected() && foodTypeField.getText().trim().isEmpty()) {
+        if (withdrawFood.isSelected() && (foodComboBox.getSelectedItem() == null || foodComboBox.getSelectedItem().toString().trim().isEmpty())) {
             showError("Food type cannot be empty when food withdrawal is enabled");
             return false;
         }
@@ -786,52 +1001,7 @@ public class CombatGUI extends JFrame {
         }
     }
     
-    /**
-     * Update configuration map with current GUI values
-     */
-    private void updateConfiguration() {
-        // Map GUI combat style selection to specific combat style
-        String selectedStyle = (String) combatStyleCombo.getSelectedItem();
-        String mappedStyle = mapCombatStyle(selectedStyle);
-        configuration.put("combatStyle", mappedStyle);
-        configuration.put("targetPriority", targetPriorityCombo.getSelectedItem());
-        configuration.put("enableSpecialAttack", enableSpecialAttack.isSelected());
-        configuration.put("minSpecEnergy", minSpecEnergySpinner.getValue());
-        configuration.put("maxSpecEnergy", maxSpecEnergySpinner.getValue());
-        configuration.put("autoLoot", autoLoot.isSelected());
-        configuration.put("safeSpotting", safeSpotting.isSelected());
-        configuration.put("prayerFlicking", prayerFlicking.isSelected());
-        configuration.put("foodThreshold", foodThresholdSpinner.getValue());
-        configuration.put("targetArea", targetAreaField.getText());
-        configuration.put("lootFilter", lootFilterField.getText());
-        
-        configuration.put("enableBanking", enableBanking.isSelected());
-        configuration.put("depositJunk", depositJunk.isSelected());
-        configuration.put("withdrawFood", withdrawFood.isSelected());
-        configuration.put("withdrawPotions", withdrawPotions.isSelected());
-        configuration.put("minFood", minFoodSpinner.getValue());
-        configuration.put("maxFood", maxFoodSpinner.getValue());
-        configuration.put("minPotions", minPotionSpinner.getValue());
-        configuration.put("bankLocation", bankLocationField.getText());
-        configuration.put("foodType", foodTypeField.getText());
-        configuration.put("potionType", potionTypeField.getText());
-        
-        configuration.put("autoWeaponSwitch", autoWeaponSwitch.isSelected());
-        configuration.put("ammunitionManagement", ammunitionManagement.isSelected());
-        configuration.put("weaponSwitchDelay", weaponSwitchDelaySpinner.getValue());
-        configuration.put("minAmmo", minAmmoSpinner.getValue());
-        configuration.put("primaryWeapon", primaryWeaponCombo.getSelectedItem());
-        configuration.put("secondaryWeapon", secondaryWeaponCombo.getSelectedItem());
-        
-        configuration.put("enableAntiBan", enableAntiBan.isSelected());
-        configuration.put("randomBreaks", randomBreaks.isSelected());
-        configuration.put("cameraMovement", cameraMovement.isSelected());
-        configuration.put("mouseVariation", mouseVariation.isSelected());
-        configuration.put("breakFrequency", breakFrequencySpinner.getValue());
-        configuration.put("breakDuration", breakDurationSpinner.getValue());
-        configuration.put("actionDelay", actionDelaySpinner.getValue());
-        configuration.put("humanLikeness", humanLikenessSlider.getValue());
-    }
+
     
     /**
      * Map GUI combat style selection to specific combat style enum value
@@ -890,19 +1060,33 @@ public class CombatGUI extends JFrame {
      * Save current configuration to file
      */
     private void saveConfiguration() {
+        String profileName = profileNameField.getText().trim();
+        if (profileName.isEmpty()) {
+            profileName = "Default_" + System.currentTimeMillis();
+        }
+        
         updateConfiguration();
-        // Implementation for saving configuration to file
-        logMessage("Configuration saved");
-        Logger.log("[CombatGUI] Configuration saved");
+        saveProfileToFile(profileName, configuration);
+        updateProfileList();
+        logMessage("Profile '" + profileName + "' saved");
+        Logger.log("[CombatGUI] Profile saved: " + profileName);
     }
     
     /**
      * Load configuration from file
      */
     private void loadConfiguration() {
-        // Implementation for loading configuration from file
-        logMessage("Configuration loaded");
-        Logger.log("[CombatGUI] Configuration loaded");
+        String selectedProfile = (String) profileComboBox.getSelectedItem();
+        if (selectedProfile != null && !selectedProfile.isEmpty()) {
+            Map<String, Object> loadedConfig = loadProfileFromFile(selectedProfile);
+            if (loadedConfig != null) {
+                applyConfigurationToGUI(loadedConfig);
+                logMessage("Profile '" + selectedProfile + "' loaded");
+                Logger.log("[CombatGUI] Profile loaded: " + selectedProfile);
+            } else {
+                logMessage("Failed to load profile: " + selectedProfile);
+            }
+        }
     }
     
     /**
@@ -976,6 +1160,325 @@ public class CombatGUI extends JFrame {
         JOptionPane.showMessageDialog(this, message, "Configuration Error", JOptionPane.ERROR_MESSAGE);
     }
     
+    // Database-driven combo box creation methods
+    
+    /**
+     * Create searchable NPC combo box with database integration
+     */
+    private JComboBox<String> createSearchableNPCComboBox() {
+        JComboBox<String> comboBox = new JComboBox<>();
+        comboBox.setEditable(true);
+        
+        // Populate with all NPCs from database
+        for (NPC npc : npcRepository.getAll()) {
+            comboBox.addItem(npc.getName());
+        }
+        
+        // Add search functionality
+        JTextField textField = (JTextField) comboBox.getEditor().getEditorComponent();
+        textField.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent e) {
+                String searchText = textField.getText().toLowerCase();
+                comboBox.removeAllItems();
+                
+                for (NPC npc : npcRepository.findByName(searchText)) {
+                    comboBox.addItem(npc.getName());
+                }
+                
+                if (comboBox.getItemCount() > 0) {
+                    comboBox.showPopup();
+                }
+            }
+        });
+        
+        return comboBox;
+    }
+    
+    /**
+     * Create searchable bank location combo box with database integration
+     */
+    private JComboBox<String> createSearchableLocationComboBox() {
+        JComboBox<String> comboBox = new JComboBox<>();
+        comboBox.setEditable(true);
+        
+        // Initialize bank location repository if not already done
+        if (locationRepository != null) {
+            locationRepository.initialize();
+            
+            // Populate with all bank locations from database
+            java.util.Set<String> uniqueLocations = new java.util.HashSet<>();
+            for (BankLocation bank : locationRepository.getAll()) {
+                if (bank.getName() != null && !bank.getName().trim().isEmpty()) {
+                    uniqueLocations.add(bank.getName());
+                }
+            }
+            
+            // Add unique bank locations to combo box
+            for (String location : uniqueLocations) {
+                comboBox.addItem(location);
+            }
+        }
+        
+        // Add search functionality
+        JTextField textField = (JTextField) comboBox.getEditor().getEditorComponent();
+        textField.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent e) {
+                String searchText = textField.getText().toLowerCase();
+                comboBox.removeAllItems();
+                
+                if (locationRepository != null) {
+                    java.util.Set<String> filteredLocations = new java.util.HashSet<>();
+                    for (BankLocation bank : locationRepository.getAll()) {
+                        if (bank.getName() != null && 
+                            bank.getName().toLowerCase().contains(searchText)) {
+                            filteredLocations.add(bank.getName());
+                        }
+                    }
+                    
+                    for (String location : filteredLocations) {
+                        comboBox.addItem(location);
+                    }
+                }
+                
+                if (comboBox.getItemCount() > 0) {
+                    comboBox.showPopup();
+                }
+            }
+        });
+        
+        return comboBox;
+    }
+    
+    /**
+     * Create searchable NPC location combo box with filtering by selected NPC
+     */
+    private JComboBox<String> createSearchableNPCLocationComboBox() {
+        JComboBox<String> comboBox = new JComboBox<>();
+        comboBox.setEditable(true);
+        
+        // Populate with all NPC locations from database
+        java.util.Set<String> uniqueLocations = new java.util.HashSet<>();
+        for (NPC npc : npcRepository.getAll()) {
+            if (npc.getLocation() != null && !npc.getLocation().trim().isEmpty()) {
+                uniqueLocations.add(npc.getLocation());
+            }
+        }
+        
+        // Add unique locations to combo box
+        for (String location : uniqueLocations) {
+            comboBox.addItem(location);
+        }
+        
+        // Add search functionality
+        JTextField textField = (JTextField) comboBox.getEditor().getEditorComponent();
+        textField.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent e) {
+                String searchText = textField.getText().toLowerCase();
+                comboBox.removeAllItems();
+                
+                java.util.Set<String> filteredLocations = new java.util.HashSet<>();
+                for (NPC npc : npcRepository.getAll()) {
+                    if (npc.getLocation() != null && 
+                        npc.getLocation().toLowerCase().contains(searchText)) {
+                        filteredLocations.add(npc.getLocation());
+                    }
+                }
+                
+                for (String location : filteredLocations) {
+                    comboBox.addItem(location);
+                }
+                
+                if (comboBox.getItemCount() > 0) {
+                    comboBox.showPopup();
+                }
+            }
+        });
+        
+        return comboBox;
+    }
+    
+    /**
+     * Update NPC location combo box based on selected NPC
+     */
+    private void updateNPCLocationComboBox(String selectedNPC) {
+        if (locationComboBox != null && selectedNPC != null) {
+            locationComboBox.removeAllItems();
+            
+            // Find locations for the selected NPC
+            java.util.Set<String> npcLocations = new java.util.HashSet<>();
+            for (NPC npc : npcRepository.getAll()) {
+                if (npc.getName().equals(selectedNPC) && 
+                    npc.getLocation() != null && !npc.getLocation().trim().isEmpty()) {
+                    npcLocations.add(npc.getLocation());
+                }
+            }
+            
+            // Add filtered locations to combo box
+            for (String location : npcLocations) {
+                locationComboBox.addItem(location);
+            }
+        }
+    }
+    
+    /**
+     * Create searchable loot combo box with database integration
+     */
+    private JComboBox<String> createSearchableLootComboBox() {
+        JComboBox<String> comboBox = new JComboBox<>();
+        comboBox.setEditable(true);
+        
+        // Populate with all equipment and consumables from database
+        for (Equipment equipment : equipmentRepository.getAll()) {
+            comboBox.addItem(equipment.getName());
+        }
+        for (Consumable consumable : consumableRepository.getAll()) {
+            comboBox.addItem(consumable.getName());
+        }
+        
+        // Add search functionality
+        JTextField textField = (JTextField) comboBox.getEditor().getEditorComponent();
+        textField.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent e) {
+                String searchText = textField.getText().toLowerCase();
+                comboBox.removeAllItems();
+                
+                // Search equipment
+                for (Equipment equipment : equipmentRepository.findByName(searchText)) {
+                    comboBox.addItem(equipment.getName());
+                }
+                // Search consumables
+                for (Consumable consumable : consumableRepository.findByName(searchText)) {
+                    comboBox.addItem(consumable.getName());
+                }
+                
+                if (comboBox.getItemCount() > 0) {
+                    comboBox.showPopup();
+                }
+            }
+        });
+        
+        return comboBox;
+    }
+    
+    /**
+     * Create searchable food combo box with database integration
+     */
+    private JComboBox<String> createSearchableFoodComboBox() {
+        JComboBox<String> comboBox = new JComboBox<>();
+        comboBox.setEditable(true);
+        
+        // Populate with food items from database
+        for (Consumable consumable : consumableRepository.getByType(Consumable.ConsumableType.FOOD)) {
+            comboBox.addItem(consumable.getName());
+        }
+        
+        // Add search functionality
+        JTextField textField = (JTextField) comboBox.getEditor().getEditorComponent();
+        textField.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent e) {
+                String searchText = textField.getText().toLowerCase();
+                comboBox.removeAllItems();
+                
+                for (Consumable consumable : consumableRepository.getByType(Consumable.ConsumableType.FOOD)) {
+                    if (consumable.getName().toLowerCase().contains(searchText)) {
+                        comboBox.addItem(consumable.getName());
+                    }
+                }
+                
+                if (comboBox.getItemCount() > 0) {
+                    comboBox.showPopup();
+                }
+            }
+        });
+        
+        return comboBox;
+    }
+    
+    /**
+     * Create searchable potion combo box with database integration
+     */
+    private JComboBox<String> createSearchablePotionComboBox() {
+        JComboBox<String> comboBox = new JComboBox<>();
+        comboBox.setEditable(true);
+        
+        // Populate with potion items from database
+        for (Consumable consumable : consumableRepository.getByType(Consumable.ConsumableType.POTION)) {
+            comboBox.addItem(consumable.getName());
+        }
+        
+        // Add search functionality
+        JTextField textField = (JTextField) comboBox.getEditor().getEditorComponent();
+        textField.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent e) {
+                String searchText = textField.getText().toLowerCase();
+                comboBox.removeAllItems();
+                
+                for (Consumable consumable : consumableRepository.getByType(Consumable.ConsumableType.POTION)) {
+                    if (consumable.getName().toLowerCase().contains(searchText)) {
+                        comboBox.addItem(consumable.getName());
+                    }
+                }
+                
+                if (comboBox.getItemCount() > 0) {
+                    comboBox.showPopup();
+                }
+            }
+        });
+        
+        return comboBox;
+    }
+    
+    /**
+     * Create searchable weapon combo box with database integration
+     */
+    private JComboBox<String> createSearchableWeaponComboBox(WeaponType weaponType) {
+        JComboBox<String> comboBox = new JComboBox<>();
+        comboBox.setEditable(true);
+        
+        // Populate with weapons of specified type from database
+        for (Equipment equipment : equipmentRepository.getByWeaponType(weaponType)) {
+            comboBox.addItem(equipment.getName());
+        }
+        
+        // Add search functionality
+        JTextField textField = (JTextField) comboBox.getEditor().getEditorComponent();
+        textField.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyReleased(java.awt.event.KeyEvent e) {
+                String searchText = textField.getText().toLowerCase();
+                comboBox.removeAllItems();
+                
+                for (Equipment equipment : equipmentRepository.getByWeaponType(weaponType)) {
+                    if (equipment.getName().toLowerCase().contains(searchText)) {
+                        comboBox.addItem(equipment.getName());
+                    }
+                }
+                
+                if (comboBox.getItemCount() > 0) {
+                    comboBox.showPopup();
+                }
+            }
+        });
+        
+        return comboBox;
+    }
+    
+    /**
+     * Update weapon combo boxes based on weapon type
+     */
+    private void updateWeaponComboBoxes(JComboBox<String> comboBox, WeaponType weaponType) {
+        comboBox.removeAllItems();
+        for (Equipment equipment : equipmentRepository.getByWeaponType(weaponType)) {
+            comboBox.addItem(equipment.getName());
+        }
+    }
+    
     /**
      * Create titled panel with component
      */
@@ -1002,6 +1505,364 @@ public class CombatGUI extends JFrame {
         JLabel label = new JLabel(icon);
         label.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
         return label;
+    }
+    
+    // Profile Management Methods
+    private void updateProfileList() {
+        profileComboBox.removeAllItems();
+        File profileDir = getProfileDirectory();
+        if (profileDir.exists() && profileDir.isDirectory()) {
+            File[] profileFiles = profileDir.listFiles((dir, name) -> name.endsWith(".json"));
+            if (profileFiles != null) {
+                for (File file : profileFiles) {
+                    String profileName = file.getName().replace(".json", "");
+                    profileComboBox.addItem(profileName);
+                }
+            }
+        }
+    }
+    
+    private void deleteProfile(String profileName) {
+        if (profileName != null && !profileName.isEmpty()) {
+            File profileFile = new File(getProfileDirectory(), profileName + ".json");
+            if (profileFile.exists() && profileFile.delete()) {
+                updateProfileList();
+                logMessage("Profile '" + profileName + "' deleted");
+            } else {
+                logMessage("Failed to delete profile: " + profileName);
+            }
+        }
+    }
+    
+    private File getProfileDirectory() {
+        String userHome = System.getProperty("user.home");
+        File dreamBotDir = new File(userHome, ".dreambot");
+        File scriptsDir = new File(dreamBotDir, "Scripts");
+        File profileDir = new File(scriptsDir, "AICombatScript_Profiles");
+        if (!profileDir.exists()) {
+            profileDir.mkdirs();
+        }
+        return profileDir;
+    }
+    
+    private void saveProfileToFile(String profileName, Map<String, Object> config) {
+        try {
+            File profileFile = new File(getProfileDirectory(), profileName + ".json");
+            // Convert config to JSON and save
+            // For now, using a simple approach - in production, use a proper JSON library
+            StringBuilder json = new StringBuilder();
+            json.append("{");
+            boolean first = true;
+            for (Map.Entry<String, Object> entry : config.entrySet()) {
+                if (!first) json.append(",");
+                json.append("\"").append(entry.getKey()).append("\":\"").append(entry.getValue()).append("\"");
+                first = false;
+            }
+            json.append("}");
+            
+            try (FileWriter writer = new FileWriter(profileFile)) {
+                writer.write(json.toString());
+            }
+        } catch (Exception e) {
+            Logger.log("[CombatGUI] Error saving profile: " + e.getMessage());
+        }
+    }
+    
+    private Map<String, Object> loadProfileFromFile(String profileName) {
+        try {
+            File profileFile = new File(getProfileDirectory(), profileName + ".json");
+            if (!profileFile.exists()) return null;
+            
+            // Simple JSON parsing
+            Map<String, Object> config = new HashMap<>();
+            try (BufferedReader reader = new BufferedReader(new FileReader(profileFile))) {
+                String content = reader.readLine();
+                if (content != null && content.startsWith("{") && content.endsWith("}")) {
+                    content = content.substring(1, content.length() - 1); // Remove { }
+                    String[] pairs = content.split(",");
+                    for (String pair : pairs) {
+                        String[] keyValue = pair.split(":", 2);
+                        if (keyValue.length == 2) {
+                            String key = keyValue[0].trim().replaceAll("\"", "");
+                            String value = keyValue[1].trim().replaceAll("\"", "");
+                            
+                            // Convert string values to appropriate types
+                            if (value.equals("true") || value.equals("false")) {
+                                config.put(key, Boolean.parseBoolean(value));
+                            } else if (value.matches("\\d+")) {
+                                config.put(key, Integer.parseInt(value));
+                            } else {
+                                config.put(key, value);
+                            }
+                        }
+                    }
+                }
+            }
+            return config;
+        } catch (Exception e) {
+            Logger.log("[CombatGUI] Error loading profile: " + e.getMessage());
+            return null;
+        }
+    }
+    
+    private void applyConfigurationToGUI(Map<String, Object> config) {
+        try {
+            // Combat Options
+            if (config.containsKey("combatStyle")) {
+                combatStyleCombo.setSelectedItem(config.get("combatStyle"));
+            }
+            if (config.containsKey("targetPriority")) {
+                targetPriorityCombo.setSelectedItem(config.get("targetPriority"));
+            }
+            if (config.containsKey("enableSpecialAttack")) {
+                enableSpecialAttack.setSelected((Boolean) config.get("enableSpecialAttack"));
+            }
+            if (config.containsKey("autoLoot")) {
+                autoLoot.setSelected((Boolean) config.get("autoLoot"));
+            }
+            if (config.containsKey("safeSpotting")) {
+                safeSpotting.setSelected((Boolean) config.get("safeSpotting"));
+            }
+            if (config.containsKey("prayerFlicking")) {
+                prayerFlicking.setSelected((Boolean) config.get("prayerFlicking"));
+            }
+            if (config.containsKey("minSpecEnergy")) {
+                minSpecEnergySpinner.setValue(config.get("minSpecEnergy"));
+            }
+            if (config.containsKey("maxSpecEnergy")) {
+                maxSpecEnergySpinner.setValue(config.get("maxSpecEnergy"));
+            }
+            
+            // Food and Health
+            if (config.containsKey("foodThreshold")) {
+                foodThresholdSpinner.setValue(config.get("foodThreshold"));
+            }
+            
+            // Target Selection
+            if (config.containsKey("targetNPC")) {
+                npcComboBox.setSelectedItem(config.get("targetNPC"));
+            }
+            if (config.containsKey("targetLocation")) {
+                locationComboBox.setSelectedItem(config.get("targetLocation"));
+            }
+            
+            // Target Selection - using lootFilterField as placeholder since target fields don't exist
+            if (config.containsKey("targetNPC")) {
+                // targetNPCField.setText((String) config.get("targetNPC"));
+                // Note: targetNPCField not found, skipping
+            }
+            if (config.containsKey("targetLocation")) {
+                // targetLocationField.setText((String) config.get("targetLocation"));
+                // Note: targetLocationField not found, skipping
+            }
+            
+            // Loot Filter
+            if (config.containsKey("lootFilter")) {
+                lootComboBox.setSelectedItem(config.get("lootFilter"));
+            }
+            
+            // Banking Options
+            if (config.containsKey("enableBanking")) {
+                enableBanking.setSelected((Boolean) config.get("enableBanking"));
+            }
+            if (config.containsKey("depositJunk")) {
+                depositJunk.setSelected((Boolean) config.get("depositJunk"));
+            }
+            if (config.containsKey("withdrawFood")) {
+                withdrawFood.setSelected((Boolean) config.get("withdrawFood"));
+            }
+            if (config.containsKey("withdrawPotions")) {
+                withdrawPotions.setSelected((Boolean) config.get("withdrawPotions"));
+            }
+            if (config.containsKey("minFood")) {
+                minFoodSpinner.setValue(config.get("minFood"));
+            }
+            if (config.containsKey("maxFood")) {
+                maxFoodSpinner.setValue(config.get("maxFood"));
+            }
+            if (config.containsKey("minPotions")) {
+                minPotionSpinner.setValue(config.get("minPotions"));
+            }
+            if (config.containsKey("bankLocation")) {
+                bankLocationCombo.setSelectedItem(config.get("bankLocation"));
+            }
+            if (config.containsKey("foodType")) {
+                foodComboBox.setSelectedItem(config.get("foodType"));
+            }
+            if (config.containsKey("potionType")) {
+                potionComboBox.setSelectedItem(config.get("potionType"));
+            }
+            
+            // Weapon Options
+            if (config.containsKey("autoWeaponSwitch")) {
+                autoWeaponSwitch.setSelected((Boolean) config.get("autoWeaponSwitch"));
+            }
+            if (config.containsKey("ammunitionManagement")) {
+                ammunitionManagement.setSelected((Boolean) config.get("ammunitionManagement"));
+            }
+            if (config.containsKey("weaponSwitchDelay")) {
+                weaponSwitchDelaySpinner.setValue(config.get("weaponSwitchDelay"));
+            }
+            if (config.containsKey("minAmmo")) {
+                minAmmoSpinner.setValue(config.get("minAmmo"));
+            }
+            if (config.containsKey("primaryWeapon")) {
+                primaryWeaponCombo.setSelectedItem(config.get("primaryWeapon"));
+            }
+            if (config.containsKey("secondaryWeapon")) {
+                secondaryWeaponCombo.setSelectedItem(config.get("secondaryWeapon"));
+            }
+            
+            // Anti-Ban Options
+            if (config.containsKey("enableAntiBan")) {
+                enableAntiBan.setSelected((Boolean) config.get("enableAntiBan"));
+            }
+            if (config.containsKey("randomBreaks")) {
+                randomBreaks.setSelected((Boolean) config.get("randomBreaks"));
+            }
+            if (config.containsKey("cameraMovement")) {
+                cameraMovement.setSelected((Boolean) config.get("cameraMovement"));
+            }
+            if (config.containsKey("mouseVariation")) {
+                mouseVariation.setSelected((Boolean) config.get("mouseVariation"));
+            }
+            if (config.containsKey("breakFrequency")) {
+                breakFrequencySpinner.setValue(config.get("breakFrequency"));
+            }
+            if (config.containsKey("breakDuration")) {
+                breakDurationSpinner.setValue(config.get("breakDuration"));
+            }
+            if (config.containsKey("actionDelay")) {
+                actionDelaySpinner.setValue(config.get("actionDelay"));
+            }
+            if (config.containsKey("humanLikeness")) {
+                humanLikenessSlider.setValue((Integer) config.get("humanLikeness"));
+            }
+            
+            Logger.log("[CombatGUI] Configuration applied to GUI successfully");
+            logMessage("Profile configuration loaded successfully");
+            
+        } catch (Exception e) {
+            Logger.log("[CombatGUI] Error applying configuration to GUI: " + e.getMessage());
+            logMessage("Error loading profile configuration: " + e.getMessage());
+        }
+    }
+    
+    // Gear and Inventory Fetching Methods
+    private void fetchCurrentGear(JPanel gearPanel) {
+        gearPanel.removeAll();
+        try {
+            if (org.dreambot.api.methods.container.impl.equipment.Equipment.isEmpty()) {
+                logMessage("No items equipped.");
+                return;
+            }
+            
+            String[] slotNames = {"Helmet", "Cape", "Amulet", "Weapon", "Body", "Shield", "Legs", "Gloves", "Boots", "Ring"};
+            for (int i = 0; i < slotNames.length; i++) {
+                org.dreambot.api.wrappers.items.Item item = org.dreambot.api.methods.container.impl.equipment.Equipment.getItemInSlot(i);
+                if (item != null) {
+                    addItemToPanel(gearPanel, item.getName(), slotNames[i]);
+                }
+            }
+            logMessage("Current gear fetched successfully.");
+        } catch (Exception e) {
+            Logger.log("Error fetching current gear: " + e.getMessage());
+            logMessage("Error fetching gear - check console for details.");
+        }
+        gearPanel.revalidate();
+        gearPanel.repaint();
+    }
+    
+    private void fetchCurrentInventory(JPanel inventoryPanel) {
+        inventoryPanel.removeAll();
+        try {
+            for (org.dreambot.api.wrappers.items.Item item : org.dreambot.api.methods.container.impl.Inventory.all()) {
+                if (item != null && item.getName() != null) {
+                    String itemName = item.getName();
+                    if (item.getAmount() > 1) {
+                        itemName += " (" + item.getAmount() + ")";
+                    }
+                    addItemToPanel(inventoryPanel, itemName, "Inventory");
+                }
+            }
+            logMessage("Current inventory fetched successfully.");
+        } catch (Exception e) {
+            Logger.log("Error fetching current inventory: " + e.getMessage());
+            logMessage("Error fetching inventory - check console for details.");
+        }
+        inventoryPanel.revalidate();
+        inventoryPanel.repaint();
+    }
+    
+    private void addItemToPanel(JPanel panel, String itemName, String category) {
+        JPanel itemPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+        itemPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+        
+        JLabel itemLabel = new JLabel(itemName);
+        JButton removeButton = new JButton("-");
+        removeButton.setPreferredSize(new Dimension(20, 20));
+        removeButton.setMargin(new Insets(0, 0, 0, 0));
+        removeButton.setToolTipText("Remove " + itemName + " from " + category.toLowerCase());
+        
+        removeButton.addActionListener(e -> {
+            panel.remove(itemPanel);
+            panel.revalidate();
+            panel.repaint();
+            logMessage("Removed " + itemName + " from " + category.toLowerCase() + " display");
+        });
+        
+        itemPanel.add(itemLabel);
+        itemPanel.add(removeButton);
+        panel.add(itemPanel);
+    }
+    
+    // Enhanced configuration management
+    private void updateConfiguration() {
+        // Combat options
+        configuration.put("combatStyle", mapCombatStyle((String) combatStyleCombo.getSelectedItem()));
+        configuration.put("targetPriority", targetPriorityCombo.getSelectedItem());
+        configuration.put("enableSpecialAttack", enableSpecialAttack.isSelected());
+        configuration.put("minSpecEnergy", minSpecEnergySpinner.getValue());
+        configuration.put("maxSpecEnergy", maxSpecEnergySpinner.getValue());
+        configuration.put("autoLoot", autoLoot.isSelected());
+        configuration.put("safeSpotting", safeSpotting.isSelected());
+        configuration.put("prayerFlicking", prayerFlicking.isSelected());
+        configuration.put("foodThreshold", foodThresholdSpinner.getValue());
+        configuration.put("targetNPC", npcComboBox.getSelectedItem());
+        configuration.put("targetLocation", locationComboBox.getSelectedItem());
+        configuration.put("lootFilter", lootComboBox.getSelectedItem());
+        
+        // Banking options
+        configuration.put("enableBanking", enableBanking.isSelected());
+        configuration.put("depositJunk", depositJunk.isSelected());
+        configuration.put("withdrawFood", withdrawFood.isSelected());
+        configuration.put("withdrawPotions", withdrawPotions.isSelected());
+        configuration.put("minFood", minFoodSpinner.getValue());
+        configuration.put("maxFood", maxFoodSpinner.getValue());
+        configuration.put("minPotions", minPotionSpinner.getValue());
+        configuration.put("bankLocation", bankLocationCombo.getSelectedItem() != null ? bankLocationCombo.getSelectedItem().toString() : "");
+        configuration.put("foodType", foodComboBox.getSelectedItem() != null ? foodComboBox.getSelectedItem().toString() : "");
+        configuration.put("potionType", potionComboBox.getSelectedItem() != null ? potionComboBox.getSelectedItem().toString() : "");
+        
+        // Weapon options
+        configuration.put("autoWeaponSwitch", autoWeaponSwitch.isSelected());
+        configuration.put("ammunitionManagement", ammunitionManagement.isSelected());
+        configuration.put("weaponSwitchDelay", weaponSwitchDelaySpinner.getValue());
+        configuration.put("minAmmo", minAmmoSpinner.getValue());
+        configuration.put("primaryWeapon", primaryWeaponCombo.getSelectedItem());
+        configuration.put("secondaryWeapon", secondaryWeaponCombo.getSelectedItem());
+        
+        // Anti-ban options
+        configuration.put("enableAntiBan", enableAntiBan.isSelected());
+        configuration.put("randomBreaks", randomBreaks.isSelected());
+        configuration.put("cameraMovement", cameraMovement.isSelected());
+        configuration.put("mouseVariation", mouseVariation.isSelected());
+        configuration.put("breakFrequency", breakFrequencySpinner.getValue());
+        configuration.put("breakDuration", breakDurationSpinner.getValue());
+        configuration.put("actionDelay", actionDelaySpinner.getValue());
+        configuration.put("humanLikeness", humanLikenessSlider.getValue());
+        
+        Logger.log("[CombatGUI] Configuration updated with all current settings");
     }
     
     // Getters for configuration access

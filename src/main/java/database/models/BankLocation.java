@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Objects;
+import com.google.gson.annotations.SerializedName;
 
 /**
  * Represents a bank location in OSRS with coordinates, accessibility, and services
@@ -14,7 +15,9 @@ public class BankLocation {
     private int locationId;
     private String name;
     private String description;
+    @SerializedName("bankType")
     private BankType type;
+    private String city; // City where the bank is located
     
     // Coordinates
     private int x;
@@ -30,6 +33,7 @@ public class BankLocation {
     private List<String> itemRequirements;
     private boolean membersOnly;
     private boolean freeToPlay;
+    private boolean accessible; // Whether the location is currently accessible
     
     // Services available
     private boolean bankChest;
@@ -62,6 +66,7 @@ public class BankLocation {
     private int bankingSpeed; // relative speed rating 1-10
     private boolean crowded; // typically busy
     private String peakHours;
+    private Map<String, Integer> walkingTimes; // walking times to various locations
     
     // Special features
     private boolean craftingArea;
@@ -70,6 +75,7 @@ public class BankLocation {
     private boolean magicTraining;
     private boolean prayerTraining;
     private List<String> specialFeatures;
+    private List<String> services; // Available services at this location
     
     public BankLocation() {
         this.accessMethods = new ArrayList<>();
@@ -81,6 +87,8 @@ public class BankLocation {
         this.teleports = new ArrayList<>();
         this.spellbookTypes = new ArrayList<>();
         this.specialFeatures = new ArrayList<>();
+        this.walkingTimes = new HashMap<>();
+        this.services = new ArrayList<>();
     }
     
     public BankLocation(int locationId, String name, BankType type, int x, int y, int z) {
@@ -93,15 +101,35 @@ public class BankLocation {
         this.z = z;
     }
     
+    // Constructor used by repository
+    public BankLocation(int locationId, String name, String city, String region, int x, int y, int z) {
+        this();
+        this.locationId = locationId;
+        this.name = name;
+        this.city = city;
+        this.region = region;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.accessible = true; // Default to accessible
+    }
+    
     // Getters and setters
     public int getLocationId() { return locationId; }
     public void setLocationId(int locationId) { this.locationId = locationId; }
+    
+    // Alias method for compatibility with repository
+    public int getId() { return locationId; }
+    public void setId(int id) { this.locationId = id; }
     
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
     
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+    
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
     
     public BankType getType() { return type; }
     public void setType(BankType type) { this.type = type; }
@@ -245,6 +273,30 @@ public class BankLocation {
     public List<String> getSpecialFeatures() { return specialFeatures; }
     public void setSpecialFeatures(List<String> specialFeatures) { 
         this.specialFeatures = specialFeatures != null ? specialFeatures : new ArrayList<>(); 
+    }
+    
+    public List<String> getServices() { return services; }
+    public void setServices(List<String> services) { 
+        this.services = services != null ? services : new ArrayList<>(); 
+    }
+    
+    public Map<String, Integer> getWalkingTimes() { return walkingTimes; }
+    public void setWalkingTimes(Map<String, Integer> walkingTimes) { 
+        this.walkingTimes = walkingTimes != null ? walkingTimes : new HashMap<>(); 
+    }
+    
+    // Alias methods for compatibility with repository
+    public Map<String, Integer> getRequirements() { return levelRequirements; }
+    public void setRequirements(Map<String, Integer> requirements) { 
+        this.levelRequirements = requirements != null ? requirements : new HashMap<>(); 
+    }
+    
+    public boolean isAccessible() {
+        return accessible;
+    }
+    
+    public void setAccessible(boolean accessible) {
+        this.accessible = accessible;
     }
     
     // Utility methods

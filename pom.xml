@@ -7,7 +7,7 @@
 
     <groupId>scripts</groupId>
     <artifactId>ai-combat-script</artifactId>
-    <version>1.0</version>
+    <version>1.5</version>
     <packaging>jar</packaging>
 
     <name>AI Combat Script</name>
@@ -39,7 +39,24 @@
 
     <build>
         <finalName>AICombatScript-${project.version}</finalName>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+            </resource>
+        </resources>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.2.0</version>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+            
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -79,6 +96,29 @@
                         <goals>
                             <goal>shade</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            
+            <!-- Copy main JAR to DreamBot Scripts folder -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <copy file="${project.build.directory}/${project.build.finalName}.jar" 
+                                      todir="${dreambot.path}/Scripts" 
+                                      overwrite="true"/>
+                                <echo message="JAR copied to DreamBot Scripts folder: ${dreambot.path}/Scripts/${project.build.finalName}.jar"/>
+                            </target>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

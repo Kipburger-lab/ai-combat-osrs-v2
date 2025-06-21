@@ -20,7 +20,7 @@ public class DatabaseManager {
     private EquipmentRepository equipmentRepository;
     private NPCRepository npcRepository;
     private ConsumableRepository consumableRepository;
-    private LocationRepository locationRepository;
+    // private LocationRepository locationRepository; // TODO: Implement LocationRepository
     
     // Loading state
     private boolean isInitialized = false;
@@ -113,7 +113,7 @@ public class DatabaseManager {
         equipmentRepository = new EquipmentRepository();
         npcRepository = new NPCRepository();
         consumableRepository = new ConsumableRepository();
-        locationRepository = new LocationRepository();
+        // locationRepository = new LocationRepository(); // TODO: Implement LocationRepository
         
         Logger.log("Repositories initialized successfully");
     }
@@ -126,20 +126,20 @@ public class DatabaseManager {
         
         try {
             // Load equipment data
-            equipmentRepository.loadData(DATA_PATH + "equipment.json");
+            equipmentRepository.initialize();
             Logger.log("Equipment data loaded: " + equipmentRepository.getCount() + " items");
             
             // Load NPC data
-            npcRepository.loadData(DATA_PATH + "npcs.json");
+            npcRepository.initialize();
             Logger.log("NPC data loaded: " + npcRepository.getCount() + " NPCs");
             
             // Load consumable data
-            consumableRepository.loadData(DATA_PATH + "consumables.json");
+            consumableRepository.initialize();
             Logger.log("Consumable data loaded: " + consumableRepository.getCount() + " items");
             
             // Load location data
-            locationRepository.loadData(DATA_PATH + "locations.json");
-            Logger.log("Location data loaded: " + locationRepository.getCount() + " locations");
+            // locationRepository.loadData(DATA_PATH + "locations.json");
+            // Logger.log("Location data loaded: " + locationRepository.getCount() + " locations"); // TODO: Implement LocationRepository
             
         } catch (Exception e) {
             Logger.error("Failed to load database data: " + e.getMessage());
@@ -174,10 +174,10 @@ public class DatabaseManager {
     /**
      * Get location repository
      */
-    public LocationRepository getLocationRepository() {
-        ensureInitialized();
-        return locationRepository;
-    }
+    // public LocationRepository getLocationRepository() {
+    //     ensureInitialized();
+    //     return locationRepository;
+    // } // TODO: Implement LocationRepository
     
     /**
      * Check if database is initialized
@@ -205,7 +205,7 @@ public class DatabaseManager {
             equipmentRepository.getCount(),
             npcRepository.getCount(),
             consumableRepository.getCount(),
-            locationRepository.getCount()
+            0 // locationRepository.getCount() // TODO: Implement LocationRepository
         );
     }
     
